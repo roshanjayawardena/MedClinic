@@ -1,4 +1,5 @@
 using FluentValidation;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ public static class PatientsModule
             options.UseNpgsql(configuration.GetConnectionString("PatientsDb")));
 
         services.AddValidatorsFromAssemblyContaining<RegisterPatientValidator>();
-        services.AddMediator();
+        services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped);
 
         return services;
     }

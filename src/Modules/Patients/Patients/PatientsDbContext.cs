@@ -18,6 +18,7 @@ public sealed class PatientsDbContext(DbContextOptions<PatientsDbContext> option
             patient.Property(p => p.FirstName).HasMaxLength(200).IsRequired();
             patient.Property(p => p.LastName).HasMaxLength(200).IsRequired();
             patient.Property(p => p.ContactPhone).HasMaxLength(50).IsRequired();
+            patient.HasIndex(p => p.TenantId);
 
             // Tenant isolation: every query against Patients is filtered to the
             // current tenant. Never remove this filter or query Patients via a
@@ -33,6 +34,7 @@ public sealed class PatientsDbContext(DbContextOptions<PatientsDbContext> option
             audit.Property(a => a.EntityType).HasMaxLength(100).IsRequired();
             audit.Property(a => a.EntityId).HasMaxLength(100).IsRequired();
             audit.Property(a => a.PerformedBy).HasMaxLength(200);
+            audit.HasIndex(a => a.TenantId);
 
             audit.HasQueryFilter(a => a.TenantId == tenantContext.TenantId);
         });
