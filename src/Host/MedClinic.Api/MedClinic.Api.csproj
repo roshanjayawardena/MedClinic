@@ -6,4 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\Core\Core.csproj" />
+    <ProjectReference Include="..\..\Modules\Patients\Patients\Patients.csproj" />
+  </ItemGroup>
+
 </Project>
