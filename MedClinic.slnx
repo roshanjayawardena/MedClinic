@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/Core/Core.csproj" />
+    <Project Path="src/BuildingBlocks/Persistence/Persistence.csproj" />
+    <Project Path="src/BuildingBlocks/Web/Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/MedClinic.Api/MedClinic.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Patients/">
+    <Project Path="src/Modules/Patients/Patients.Contracts/Patients.Contracts.csproj" />
+    <Project Path="src/Modules/Patients/Patients/Patients.csproj" />
+  </Folder>
+</Solution>
