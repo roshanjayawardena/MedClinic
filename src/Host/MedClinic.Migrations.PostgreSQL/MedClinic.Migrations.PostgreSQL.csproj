@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MedClinic.Migrations.PostgreSQL</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <!--
+    Add a ProjectReference for each module as it's built.
+    This project exists solely to hold migrations — it references module runtime projects
+    so EF can build the model at design time (dotnet ef migrations add).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Patients\Patients\Patients.csproj" />
+  </ItemGroup>
+
+</Project>

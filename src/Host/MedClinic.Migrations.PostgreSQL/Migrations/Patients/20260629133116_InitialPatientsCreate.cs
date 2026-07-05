@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Patients.Migrations
+namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
 {
     /// <inheritdoc />
     public partial class InitialPatientsCreate : Migration
@@ -11,8 +11,11 @@ namespace Patients.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(name: "patients");
+
             migrationBuilder.CreateTable(
                 name: "patients",
+                schema: "patients",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -31,6 +34,7 @@ namespace Patients.Migrations
 
             migrationBuilder.CreateTable(
                 name: "patients_audit_entries",
+                schema: "patients",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -48,11 +52,13 @@ namespace Patients.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_patients_TenantId",
+                schema: "patients",
                 table: "patients",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_patients_audit_entries_TenantId",
+                schema: "patients",
                 table: "patients_audit_entries",
                 column: "TenantId");
         }
@@ -60,11 +66,8 @@ namespace Patients.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "patients");
-
-            migrationBuilder.DropTable(
-                name: "patients_audit_entries");
+            migrationBuilder.DropTable(name: "patients_audit_entries", schema: "patients");
+            migrationBuilder.DropTable(name: "patients", schema: "patients");
         }
     }
 }

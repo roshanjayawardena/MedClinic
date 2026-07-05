@@ -12,7 +12,8 @@ Read first: `architecture.md`.
 
 1. Create two projects: `src/Modules/<Name>/<Name>` (runtime) and `<Name>.Contracts`.
 2. Reference BuildingBlocks (Core, Persistence) from the runtime project; Contracts references Core only.
-3. Add both to the solution: `dotnet sln add (Get-ChildItem -Recurse -Filter *.csproj).FullName`.
+3. Add both to the solution (edit `MedClinic.slnx` directly — add two `<Project Path="...">` entries
+   under the `/src/Host/` or `/src/Modules/<Name>/` folder node, matching the existing pattern).
 4. `<Name>Module.cs` implements `IModule` with `RegisterServices()` and `MapEndpoints()`, plus the
    assembly attribute: `[assembly: MedClinicModule(typeof(<Name>Module), order)]`.
 5. `Persistence/<Name>DbContext.cs` derives from `BaseDbContext` (tenant filter ON); `OnModelCreating`

@@ -16,7 +16,7 @@ public sealed record CheckInResponse(Guid Id, string Status);
 
 - `public sealed`, return `ValueTask<Result<T>>` (or `ValueTask<Result>`), inject the module DbContext.
 - `.ConfigureAwait(false)` on every await. Propagate the `CancellationToken`.
-- Return `Result.Fail(...)` for expected failures — don't throw. Throw only for truly exceptional cases.
+- Return `Result<T>.Fail(...)` for expected failures — don't throw. Throw only for truly exceptional cases.
 - Stay tenant-scoped (see `phi-and-tenancy.md`). Never log PHI.
 
 ```csharp
@@ -26,13 +26,13 @@ public sealed class CheckInHandler(AppointmentsDbContext db)
     {
         var appt = await db.Appointments.FirstOrDefaultAsync(a => a.Id == cmd.AppointmentId, ct)
                                         .ConfigureAwait(false);
-        if (appt is null) return Result.Fail<CheckInResponse>("Appointment not found.");
+        if (appt is null) return Result<CheckInResponse>.Fail("Appointment not found.");
 
         var transition = appt.CheckIn();                 // rule lives in the aggregate
-        if (transition.IsFailure) return Result.Fail<CheckInResponse>(transition.Error);
+        if (transition.IsFailure) return Result<CheckInResponse>.Fail(transition.Error!);
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return Result.Ok(new CheckInResponse(appt.Id, appt.Status.ToString()));
+        return Result<CheckInResponse>.Ok(new CheckInResponse(appt.Id, appt.Status.ToString()));
     }
 }
 ```

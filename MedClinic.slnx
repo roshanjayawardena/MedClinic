@@ -11,6 +11,8 @@
   </Folder>
   <Folder Name="/src/Host/">
     <Project Path="src/Host/MedClinic.Api/MedClinic.Api.csproj" />
+    <Project Path="src/Host/MedClinic.DbMigrator/MedClinic.DbMigrator.csproj" />
+    <Project Path="src/Host/MedClinic.Migrations.PostgreSQL/MedClinic.Migrations.PostgreSQL.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Patients/">
