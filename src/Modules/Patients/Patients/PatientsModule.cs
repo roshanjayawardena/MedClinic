@@ -1,25 +1,33 @@
+using Core;
 using FluentValidation;
 using Mediator;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Patients.Features.RegisterPatient;
+using Patients.Persistence;
+
+[assembly: MedClinicModule(typeof(Patients.PatientsModule), order: 10)]
 
 namespace Patients;
 
-public static class PatientsModule
+public sealed class PatientsModule : IModule
 {
-    public static IServiceCollection AddPatientsModule(this IServiceCollection services, IConfiguration configuration)
+    public void RegisterServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<PatientsDbContext>(options =>
+        services.AddDbContextFactory<PatientsDbContext>((sp, options) =>
             options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
+                configuration["ConnectionStrings:DefaultConnection"],
                 npg => npg
                     .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
                     .MigrationsHistoryTable("__EFMigrationsHistory", "patients")));
 
         services.AddValidatorsFromAssemblyContaining<RegisterPatientValidator>();
-        services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped);
+    }
 
-        return services;
+    public void MapEndpoints(IEndpointRouteBuilder app)
+    {
+        RegisterPatientEndpoint.Map(app);
     }
 }

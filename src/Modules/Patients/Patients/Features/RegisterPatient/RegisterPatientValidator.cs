@@ -1,7 +1,7 @@
 using FluentValidation;
 using Patients.Contracts;
 
-namespace Patients;
+namespace Patients.Features.RegisterPatient;
 
 public sealed class RegisterPatientValidator : AbstractValidator<RegisterPatientCommand>
 {

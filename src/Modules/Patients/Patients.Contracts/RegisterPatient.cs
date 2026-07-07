@@ -7,6 +7,7 @@ public sealed record RegisterPatientCommand(
     string LastName,
     DateOnly DateOfBirth,
     string ContactPhone,
-    bool ConsentToDataProcessing) : IRequest<Core.Result<RegisterPatientResponse>>;
+    bool ConsentToDataProcessing,
+    bool ConsentToCommunications = false) : IRequest<Core.Result<RegisterPatientResponse>>;
 
 public sealed record RegisterPatientResponse(Guid PatientId);

@@ -1,37 +1,38 @@
-namespace Patients;
+using Core;
 
-public sealed class Patient
+namespace Patients.Domain;
+
+public sealed class Patient : AuditableEntity
 {
-    public Guid Id { get; private set; }
-    public Guid TenantId { get; private set; }
+    private Patient() { } // required by EF Core
+
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
     public DateOnly DateOfBirth { get; private set; }
     public string ContactPhone { get; private set; } = string.Empty;
     public bool ConsentToDataProcessing { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public bool ConsentToCommunications { get; private set; }
 
-    private Patient()
-    {
-    }
-
+    /// <summary>
+    /// Creates a new Patient. Id is set here; TenantId and CreatedAt are
+    /// stamped automatically by BaseDbContext.SaveChangesAsync — not set here.
+    /// Consent is enforced by RegisterPatientValidator before this method runs.
+    /// </summary>
     public static Patient Register(
-        Guid tenantId,
         string firstName,
         string lastName,
         DateOnly dateOfBirth,
         string contactPhone,
         bool consentToDataProcessing,
-        DateTimeOffset nowUtc) =>
+        bool consentToCommunications) =>
         new()
         {
             Id = Guid.NewGuid(),
-            TenantId = tenantId,
             FirstName = firstName,
             LastName = lastName,
             DateOfBirth = dateOfBirth,
             ContactPhone = contactPhone,
             ConsentToDataProcessing = consentToDataProcessing,
-            CreatedAtUtc = nowUtc,
+            ConsentToCommunications = consentToCommunications,
         };
 }

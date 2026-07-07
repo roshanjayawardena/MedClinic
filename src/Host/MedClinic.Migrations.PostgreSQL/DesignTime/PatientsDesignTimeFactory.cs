@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Patients;
+using Patients.Persistence;
 
 namespace MedClinic.Migrations.PostgreSQL.DesignTime;
 
@@ -14,12 +14,12 @@ internal sealed class PatientsDesignTimeFactory : IDesignTimeDbContextFactory<Pa
     {
         var options = new DbContextOptionsBuilder<PatientsDbContext>()
             .UseNpgsql(
-                "Host=localhost;Database=mediclinic_dev;Username=postgres;Password=postgres",
+                "Host=localhost;Port=5433;Database=mediclinic_dev;Username=postgres;Password=postgres",
                 npg => npg
                     .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
                     .MigrationsHistoryTable("__EFMigrationsHistory", "patients"))
             .Options;
 
-        return new PatientsDbContext(options, new MigrationTenantContext());
+        return new PatientsDbContext(options, new MigrationTenantContext(), TimeProvider.System);
     }
 }

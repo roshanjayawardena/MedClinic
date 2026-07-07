@@ -1,43 +1,45 @@
 using Core;
 using Mediator;
+using Microsoft.EntityFrameworkCore;
 using Patients.Contracts;
+using Patients.Domain;
+using Patients.Persistence;
 
-namespace Patients;
+namespace Patients.Features.RegisterPatient;
 
 public sealed class RegisterPatientHandler(
-    PatientsDbContext dbContext,
+    IDbContextFactory<PatientsDbContext> dbFactory,
     ITenantContext tenantContext,
-    TimeProvider timeProvider) : IRequestHandler<RegisterPatientCommand, Result<RegisterPatientResponse>>
+    TimeProvider timeProvider)
+    : IRequestHandler<RegisterPatientCommand, Result<RegisterPatientResponse>>
 {
     public async ValueTask<Result<RegisterPatientResponse>> Handle(
         RegisterPatientCommand command,
         CancellationToken cancellationToken)
     {
-        var nowUtc = timeProvider.GetUtcNow();
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
         var patient = Patient.Register(
-            tenantContext.TenantId,
             command.FirstName,
             command.LastName,
             command.DateOfBirth,
             command.ContactPhone,
             command.ConsentToDataProcessing,
-            nowUtc);
+            command.ConsentToCommunications);
 
-        dbContext.Patients.Add(patient);
+        db.Patients.Add(patient);
 
-        // Audit entry references the patient's surrogate id only — no PHI.
-        dbContext.AuditEntries.Add(new AuditEntry(
+        db.AuditEntries.Add(new AuditEntry(
             Guid.NewGuid(),
             tenantContext.TenantId,
             Action: "PatientRegistered",
             EntityType: nameof(Patient),
             EntityId: patient.Id.ToString(),
             PerformedBy: null,
-            nowUtc));
+            timeProvider.GetUtcNow()));
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return Result<RegisterPatientResponse>.Success(new RegisterPatientResponse(patient.Id));
+        return Result<RegisterPatientResponse>.Ok(new RegisterPatientResponse(patient.Id));
     }
 }

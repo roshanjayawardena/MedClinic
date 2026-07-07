@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Patients;
+using Patients.Persistence;
 
 #nullable disable
 
@@ -57,14 +57,17 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("patients_audit_entries", "patients");
+                    b.ToTable("audit_entries", "patients");
                 });
 
-            modelBuilder.Entity("Patients.Patient", b =>
+            modelBuilder.Entity("Patients.Domain.Patient", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("ConsentToCommunications")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("ConsentToDataProcessing")
                         .HasColumnType("boolean");
@@ -74,21 +77,31 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasDefaultValue(false)
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");

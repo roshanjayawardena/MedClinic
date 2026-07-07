@@ -20,12 +20,16 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     FirstName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     LastName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     ContactPhone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     ConsentToDataProcessing = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    ConsentToCommunications = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,7 +37,7 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
                 });
 
             migrationBuilder.CreateTable(
-                name: "patients_audit_entries",
+                name: "audit_entries",
                 schema: "patients",
                 columns: table => new
                 {
@@ -47,7 +51,7 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_patients_audit_entries", x => x.Id);
+                    table.PrimaryKey("PK_audit_entries", x => x.Id);
                 });
 
             migrationBuilder.CreateIndex(
@@ -57,16 +61,16 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_patients_audit_entries_TenantId",
+                name: "IX_audit_entries_TenantId",
                 schema: "patients",
-                table: "patients_audit_entries",
+                table: "audit_entries",
                 column: "TenantId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "patients_audit_entries", schema: "patients");
+            migrationBuilder.DropTable(name: "audit_entries", schema: "patients");
             migrationBuilder.DropTable(name: "patients", schema: "patients");
         }
     }

@@ -1,4 +1,3 @@
-using Core;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -6,24 +5,22 @@ using Microsoft.AspNetCore.Routing;
 using Patients.Contracts;
 using Web;
 
-namespace Patients;
+namespace Patients.Features.RegisterPatient;
 
-public static class PatientsEndpoints
+internal static class RegisterPatientEndpoint
 {
-    public static IEndpointRouteBuilder MapPatientsEndpoints(this IEndpointRouteBuilder app)
+    internal static void Map(IEndpointRouteBuilder app)
     {
-        app.MapPost("/patients", RegisterPatient)
+        app.MapPost("/patients", Handle)
             .WithName("RegisterPatient")
             .WithTags("Patients")
-            .WithSummary("Register a new patient")
+            .WithSummary("Register a new patient at this clinic")
             .AddEndpointFilter<ValidationFilter<RegisterPatientCommand>>()
             .Produces<RegisterPatientResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
-
-        return app;
     }
 
-    private static async Task<IResult> RegisterPatient(
+    private static async Task<IResult> Handle(
         RegisterPatientCommand command,
         IMediator mediator,
         CancellationToken cancellationToken)
