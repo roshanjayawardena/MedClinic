@@ -1,3 +1,4 @@
+using Appointments;
 using Core;
 using MedClinic.Api;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,8 +14,14 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddOpenApi();
 
-var patientsModule = new PatientsModule();
-patientsModule.RegisterServices(builder.Services, builder.Configuration);
+var modules = new IModule[]
+{
+    new PatientsModule(),
+    new AppointmentsModule(),
+};
+
+foreach (var module in modules)
+    module.RegisterServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
@@ -30,6 +37,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-patientsModule.MapEndpoints(app);
+foreach (var module in modules)
+    module.MapEndpoints(app);
 
 app.Run();

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Appointments.Persistence;
 using Core;
 using MedClinic.Migrations.PostgreSQL;
 using MedClinic.Migrations.PostgreSQL.Migrations.Patients;
@@ -31,6 +32,13 @@ host.Services.AddDbContext<PatientsDbContext>(o =>
      .ConfigureWarnings(w => w.Ignore(
          Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+host.Services.AddDbContext<AppointmentsDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "appointments"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
 host.Services.AddSingleton<ITenantContext>(tenantContext);
 host.Services.AddSingleton(TimeProvider.System);
 
@@ -46,8 +54,9 @@ Console.WriteLine("Applying MedClinic migrations...");
 await sp.GetRequiredService<PatientsDbContext>().Database.MigrateAsync();
 Console.WriteLine("  ✓ Patients");
 
+await sp.GetRequiredService<AppointmentsDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Appointments");
+
 // Add new modules here as they are built:
-// await sp.GetRequiredService<AppointmentsDbContext>().Database.MigrateAsync();
-// Console.WriteLine("  ✓ Appointments");
 
 Console.WriteLine("All migrations applied successfully.");

@@ -19,6 +19,7 @@
   -->
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Patients\Patients\Patients.csproj" />
+    <ProjectReference Include="..\..\Modules\Appointments\Appointments\Appointments.csproj" />
   </ItemGroup>
 
 </Project>

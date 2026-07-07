@@ -22,7 +22,9 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Core\Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Persistence\Persistence.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
-    <ProjectReference Include="..\Patients.Contracts\Patients.Contracts.csproj" />
+    <ProjectReference Include="..\Appointments.Contracts\Appointments.Contracts.csproj" />
+    <!-- Cross-module: Contracts only — never the Patients runtime project -->
+    <ProjectReference Include="..\..\..\Modules\Patients\Patients.Contracts\Patients.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

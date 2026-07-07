@@ -19,4 +19,8 @@
     <Project Path="src/Modules/Patients/Patients.Contracts/Patients.Contracts.csproj" />
     <Project Path="src/Modules/Patients/Patients/Patients.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Appointments/">
+    <Project Path="src/Modules/Appointments/Appointments.Contracts/Appointments.Contracts.csproj" />
+    <Project Path="src/Modules/Appointments/Appointments/Appointments.csproj" />
+  </Folder>
 </Solution>
