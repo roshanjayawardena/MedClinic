@@ -1,6 +1,7 @@
 using System.Reflection;
 using Appointments.Persistence;
 using Core;
+using Encounters.Persistence;
 using MedClinic.Migrations.PostgreSQL;
 using MedClinic.Migrations.PostgreSQL.Migrations.Patients;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,13 @@ host.Services.AddDbContext<AppointmentsDbContext>(o =>
      .ConfigureWarnings(w => w.Ignore(
          Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+host.Services.AddDbContext<EncountersDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "encounters"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
 host.Services.AddSingleton<ITenantContext>(tenantContext);
 host.Services.AddSingleton(TimeProvider.System);
 
@@ -56,6 +64,9 @@ Console.WriteLine("  ✓ Patients");
 
 await sp.GetRequiredService<AppointmentsDbContext>().Database.MigrateAsync();
 Console.WriteLine("  ✓ Appointments");
+
+await sp.GetRequiredService<EncountersDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Encounters");
 
 // Add new modules here as they are built:
 

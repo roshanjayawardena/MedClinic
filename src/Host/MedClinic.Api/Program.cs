@@ -1,5 +1,6 @@
 using Appointments;
 using Core;
+using Encounters;
 using MedClinic.Api;
 using Microsoft.Extensions.DependencyInjection;
 using Patients;
@@ -18,6 +19,7 @@ var modules = new IModule[]
 {
     new PatientsModule(),
     new AppointmentsModule(),
+    new EncountersModule(),
 };
 
 foreach (var module in modules)
