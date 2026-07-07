@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Patients.Features.GetPatientById;
 using Patients.Features.RegisterPatient;
 using Patients.Persistence;
 
@@ -29,5 +30,6 @@ public sealed class PatientsModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         RegisterPatientEndpoint.Map(app);
+        GetPatientByIdEndpoint.Map(app);
     }
 }
