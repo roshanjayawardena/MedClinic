@@ -31,4 +31,8 @@
     <Project Path="src/Modules/Prescriptions/Prescriptions.Contracts/Prescriptions.Contracts.csproj" />
     <Project Path="src/Modules/Prescriptions/Prescriptions/Prescriptions.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Identity.Contracts/Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/Identity/Identity.csproj" />
+  </Folder>
 </Solution>

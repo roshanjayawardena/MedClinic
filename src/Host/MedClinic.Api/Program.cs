@@ -1,6 +1,8 @@
 using Appointments;
 using Core;
 using Encounters;
+using Identity;
+using Identity.Middleware;
 using MedClinic.Api;
 using Microsoft.Extensions.DependencyInjection;
 using Patients;
@@ -22,6 +24,7 @@ var modules = new IModule[]
     new AppointmentsModule(),
     new EncountersModule(),
     new PrescriptionsModule(),
+    new IdentityModule(),
 };
 
 foreach (var module in modules)
@@ -40,6 +43,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseAuthentication();
+// Validates JWT clinic_id == X-Tenant-Id header — prevents cross-clinic data access.
+app.UseMiddleware<TenantClaimValidationMiddleware>();
+app.UseAuthorization();
 
 foreach (var module in modules)
     module.MapEndpoints(app);

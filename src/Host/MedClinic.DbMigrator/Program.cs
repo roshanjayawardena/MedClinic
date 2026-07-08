@@ -7,6 +7,9 @@ using MedClinic.Migrations.PostgreSQL.Migrations.Patients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Identity.Domain;
+using Identity.Persistence;
+using Microsoft.AspNetCore.Identity;
 using Patients.Persistence;
 using Prescriptions.Persistence;
 
@@ -55,6 +58,18 @@ host.Services.AddDbContext<PrescriptionsDbContext>(o =>
      .ConfigureWarnings(w => w.Ignore(
          Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+host.Services.AddDbContext<IdentityModuleDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "identity"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
+// Identity services are needed for RoleManager used during role seeding.
+host.Services.AddIdentityCore<ClinicUser>()
+    .AddRoles<ClinicRole>()
+    .AddEntityFrameworkStores<IdentityModuleDbContext>();
+
 host.Services.AddSingleton<ITenantContext>(tenantContext);
 host.Services.AddSingleton(TimeProvider.System);
 
@@ -78,6 +93,9 @@ Console.WriteLine("  ✓ Encounters");
 
 await sp.GetRequiredService<PrescriptionsDbContext>().Database.MigrateAsync();
 Console.WriteLine("  ✓ Prescriptions");
+
+await sp.GetRequiredService<IdentityModuleDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Identity");
 
 // Add new modules here as they are built:
 
