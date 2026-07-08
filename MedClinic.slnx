@@ -27,4 +27,8 @@
     <Project Path="src/Modules/Encounters/Encounters.Contracts/Encounters.Contracts.csproj" />
     <Project Path="src/Modules/Encounters/Encounters/Encounters.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Prescriptions/">
+    <Project Path="src/Modules/Prescriptions/Prescriptions.Contracts/Prescriptions.Contracts.csproj" />
+    <Project Path="src/Modules/Prescriptions/Prescriptions/Prescriptions.csproj" />
+  </Folder>
 </Solution>

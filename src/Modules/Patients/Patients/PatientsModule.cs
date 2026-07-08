@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Patients.Features.AddAllergy;
+using Patients.Features.GetPatientAllergies;
 using Patients.Features.GetPatientById;
 using Patients.Features.RegisterPatient;
 using Patients.Persistence;
@@ -31,5 +33,7 @@ public sealed class PatientsModule : IModule
     {
         RegisterPatientEndpoint.Map(app);
         GetPatientByIdEndpoint.Map(app);
+        AddAllergyEndpoint.Map(app);
+        GetPatientAllergiesEndpoint.Map(app);
     }
 }

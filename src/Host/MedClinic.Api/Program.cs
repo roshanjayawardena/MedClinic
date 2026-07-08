@@ -4,6 +4,7 @@ using Encounters;
 using MedClinic.Api;
 using Microsoft.Extensions.DependencyInjection;
 using Patients;
+using Prescriptions;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,7 @@ var modules = new IModule[]
     new PatientsModule(),
     new AppointmentsModule(),
     new EncountersModule(),
+    new PrescriptionsModule(),
 };
 
 foreach (var module in modules)

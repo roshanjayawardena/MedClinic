@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Patients.Persistence;
+using Prescriptions.Persistence;
 
 // Force the migrations assembly into the AppDomain so EF can discover the migration classes.
 // Without a direct type reference, the assembly is copied to output but not loaded at runtime.
@@ -47,6 +48,13 @@ host.Services.AddDbContext<EncountersDbContext>(o =>
      .ConfigureWarnings(w => w.Ignore(
          Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+host.Services.AddDbContext<PrescriptionsDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "prescriptions"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
 host.Services.AddSingleton<ITenantContext>(tenantContext);
 host.Services.AddSingleton(TimeProvider.System);
 
@@ -67,6 +75,9 @@ Console.WriteLine("  ✓ Appointments");
 
 await sp.GetRequiredService<EncountersDbContext>().Database.MigrateAsync();
 Console.WriteLine("  ✓ Encounters");
+
+await sp.GetRequiredService<PrescriptionsDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Prescriptions");
 
 // Add new modules here as they are built:
 

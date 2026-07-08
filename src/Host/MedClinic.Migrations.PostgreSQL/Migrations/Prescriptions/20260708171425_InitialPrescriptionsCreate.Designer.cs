@@ -2,22 +2,25 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Patients.Persistence;
+using Prescriptions.Persistence;
 
 #nullable disable
 
-namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
+namespace MedClinic.Migrations.PostgreSQL.Migrations.Prescriptions
 {
-    [DbContext(typeof(PatientsDbContext))]
-    partial class PatientsDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(PrescriptionsDbContext))]
+    [Migration("20260708171425_InitialPrescriptionsCreate")]
+    partial class InitialPrescriptionsCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("patients")
+                .HasDefaultSchema("prescriptions")
                 .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -58,104 +61,98 @@ namespace MedClinic.Migrations.PostgreSQL.Migrations.Patients
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("audit_entries", "patients");
+                    b.ToTable("audit_entries", "prescriptions");
                 });
 
-            modelBuilder.Entity("Patients.Domain.Allergy", b =>
+            modelBuilder.Entity("Prescriptions.Domain.ClosedEncounterRecord", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("EncounterId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTimeOffset>("ClosedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DrugName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.HasKey("EncounterId");
 
-                    b.HasIndex("PatientId", "TenantId");
+                    b.HasIndex("TenantId");
 
-                    b.ToTable("allergies", "patients");
+                    b.ToTable("closed_encounter_records", "prescriptions");
                 });
 
-            modelBuilder.Entity("Patients.Domain.Patient", b =>
+            modelBuilder.Entity("Prescriptions.Domain.Prescription", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("ConsentToCommunications")
-                        .HasColumnType("boolean");
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("ConsentToDataProcessing")
-                        .HasColumnType("boolean");
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<string>("ContactPhone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
-
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FirstName")
+                    b.Property<DateTimeOffset?>("DispensedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DosageInstructions")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("DrugName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("EncounterId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("QuantityDays")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EncounterId");
+
+                    b.HasIndex("PatientId");
+
                     b.HasIndex("TenantId");
 
-                    b.ToTable("patients", "patients");
+                    b.ToTable("prescriptions", "prescriptions");
                 });
 #pragma warning restore 612, 618
         }

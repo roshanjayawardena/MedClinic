@@ -12,6 +12,7 @@ public sealed class PatientsDbContext(
     : BaseDbContext<PatientsDbContext>(options, tenantContext, timeProvider)
 {
     public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<Allergy> Allergies => Set<Allergy>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -25,6 +26,15 @@ public sealed class PatientsDbContext(
             patient.Property(p => p.LastName).HasMaxLength(200).IsRequired();
             patient.Property(p => p.ContactPhone).HasMaxLength(50).IsRequired();
             patient.HasIndex(p => p.TenantId);
+        });
+
+        modelBuilder.Entity<Allergy>(allergy =>
+        {
+            allergy.ToTable("allergies");
+            allergy.Property(a => a.DrugName).HasMaxLength(200).IsRequired();
+            allergy.Property(a => a.Severity).HasMaxLength(50).IsRequired();
+            allergy.Property(a => a.Notes).HasMaxLength(500);
+            allergy.HasIndex(a => new { a.PatientId, a.TenantId });
         });
 
         // AuditEntry is not an AuditableEntity — it is the audit log itself (append-only).
@@ -43,7 +53,7 @@ public sealed class PatientsDbContext(
         });
 
         // Always call base LAST — it applies the global tenant + soft-delete filter
-        // to Patient and every other AuditableEntity subtype in this context.
+        // to Patient, Allergy, and every other AuditableEntity subtype in this context.
         base.OnModelCreating(modelBuilder);
     }
 }
