@@ -35,4 +35,8 @@
     <Project Path="src/Modules/Identity/Identity.Contracts/Identity.Contracts.csproj" />
     <Project Path="src/Modules/Identity/Identity/Identity.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Billing/">
+    <Project Path="src/Modules/Billing/Billing.Contracts/Billing.Contracts.csproj" />
+    <Project Path="src/Modules/Billing/Billing/Billing.csproj" />
+  </Folder>
 </Solution>

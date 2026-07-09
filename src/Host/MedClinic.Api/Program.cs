@@ -1,4 +1,5 @@
 using Appointments;
+using Billing;
 using Core;
 using Encounters;
 using Identity;
@@ -25,6 +26,7 @@ var modules = new IModule[]
     new EncountersModule(),
     new PrescriptionsModule(),
     new IdentityModule(),
+    new BillingModule(),
 };
 
 foreach (var module in modules)
