@@ -1,4 +1,5 @@
 using Appointments.Features.BookAppointment;
+using Appointments.Features.CancelAppointment;
 using Appointments.Features.CheckInAppointment;
 using Appointments.Features.GetAppointmentById;
 using Appointments.Persistence;
@@ -31,6 +32,7 @@ public sealed class AppointmentsModule : IModule
     {
         BookAppointmentEndpoint.Map(app);
         CheckInAppointmentEndpoint.Map(app);
+        CancelAppointmentEndpoint.Map(app);
         GetAppointmentByIdEndpoint.Map(app);
     }
 }

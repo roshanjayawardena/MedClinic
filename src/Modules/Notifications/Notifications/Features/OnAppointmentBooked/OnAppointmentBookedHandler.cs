@@ -1,22 +1,21 @@
 using Appointments.Contracts.Events;
+using Hangfire;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Notifications.Domain;
-using Notifications.Infrastructure;
+using Notifications.Jobs;
 using Notifications.Persistence;
-using Patients.Contracts;
 
 namespace Notifications.Features.OnAppointmentBooked;
 
 public sealed class OnAppointmentBookedHandler(
     IDbContextFactory<NotificationsDbContext> dbFactory,
-    IMediator mediator,
-    INotificationSender sender,
-    TimeProvider timeProvider,
-    ILogger<OnAppointmentBookedHandler> logger)
+    IBackgroundJobClient backgroundJobs,
+    TimeProvider timeProvider)
     : INotificationHandler<AppointmentBookedIntegrationEvent>
 {
+    private static readonly TimeSpan ReminderLeadTime = TimeSpan.FromHours(24);
+
     public async ValueTask Handle(
         AppointmentBookedIntegrationEvent notification,
         CancellationToken cancellationToken)
@@ -25,70 +24,38 @@ public sealed class OnAppointmentBookedHandler(
 
         // Idempotency guard — at-least-once delivery assumption.
         var alreadyHandled = await db.Notifications
-            .AnyAsync(n => n.AppointmentId == notification.AppointmentId
-                        && n.TemplateKey == TemplateKeys.AppointmentReminder,
-                       cancellationToken)
+            .AnyAsync(n =>
+                n.AppointmentId == notification.AppointmentId &&
+                n.TemplateKey == TemplateKeys.AppointmentReminder,
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (alreadyHandled)
             return;
 
-        // Cross-module query via Patients.Contracts only — minimal data, consent + phone only.
-        var contactResult = await mediator
-            .Send(new GetPatientContactQuery(notification.PatientId), cancellationToken)
-            .ConfigureAwait(false);
-
-        if (contactResult.IsFailure)
-        {
-            // Never log patientId without careful consideration — log only the error code.
-            logger.LogWarning("GetPatientContact failed: {Code}", contactResult.Error!.Code);
-            db.Notifications.Add(Notification.Record(
-                notification.PatientId,
-                notification.AppointmentId,
-                NotificationChannel.Sms,
-                TemplateKeys.AppointmentReminder,
-                NotificationStatus.Failed,
-                failureReason: contactResult.Error.Code));
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        var contact = contactResult.Value;
-
-        if (!contact.ConsentToCommunications)
-        {
-            db.Notifications.Add(Notification.Record(
-                notification.PatientId,
-                notification.AppointmentId,
-                NotificationChannel.Sms,
-                TemplateKeys.AppointmentReminder,
-                NotificationStatus.ConsentDenied));
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        var body = $"Reminder: your appointment is on {notification.ScheduledAt:dddd d MMMM yyyy 'at' h:mm tt}. Please arrive 10 minutes early.";
-
         var now = timeProvider.GetUtcNow();
-        NotificationStatus status;
-        DateTimeOffset? sentAt = null;
-        string? failureReason = null;
+        var reminderAt = notification.ScheduledAt - ReminderLeadTime;
 
-        try
+        // Schedule 24 h before the appointment; enqueue immediately if less than 24 h away.
+        string hangfireJobId;
+        if (reminderAt > now)
         {
-            // Recipient (contact.ContactPhone) is PHI — passed directly to sender, never logged.
-            await sender
-                .SendAsync(new NotificationMessage(NotificationChannel.Sms, contact.ContactPhone, body), cancellationToken)
-                .ConfigureAwait(false);
-            status = NotificationStatus.Sent;
-            sentAt = now;
+            hangfireJobId = backgroundJobs.Schedule<AppointmentReminderJob>(
+                job => job.SendAsync(
+                    notification.AppointmentId,
+                    notification.PatientId,
+                    notification.ClinicId,
+                    notification.ScheduledAt),
+                reminderAt);
         }
-        catch (Exception ex)
+        else
         {
-            // Log only the exception type — the message may contain the phone number.
-            logger.LogError("SMS send failed: {ExceptionType}", ex.GetType().Name);
-            status = NotificationStatus.Failed;
-            failureReason = ex.GetType().Name;
+            hangfireJobId = backgroundJobs.Enqueue<AppointmentReminderJob>(
+                job => job.SendAsync(
+                    notification.AppointmentId,
+                    notification.PatientId,
+                    notification.ClinicId,
+                    notification.ScheduledAt));
         }
 
         db.Notifications.Add(Notification.Record(
@@ -96,9 +63,8 @@ public sealed class OnAppointmentBookedHandler(
             notification.AppointmentId,
             NotificationChannel.Sms,
             TemplateKeys.AppointmentReminder,
-            status,
-            sentAt,
-            failureReason));
+            NotificationStatus.Scheduled,
+            hangfireJobId: hangfireJobId));
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }

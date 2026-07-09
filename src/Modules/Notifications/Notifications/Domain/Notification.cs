@@ -16,6 +16,9 @@ public sealed class Notification : AuditableEntity
     // Never store the failure reason verbatim from the provider — it may contain PHI (e.g. "Invalid number: +64...").
     public string? FailureReason { get; private set; }
 
+    // Hangfire job ID — set when a reminder is scheduled; cleared on send or cancellation.
+    public string? HangfireJobId { get; private set; }
+
     public static Notification Record(
         Guid patientId,
         Guid? appointmentId,
@@ -23,7 +26,8 @@ public sealed class Notification : AuditableEntity
         string templateKey,
         NotificationStatus status,
         DateTimeOffset? sentAt = null,
-        string? failureReason = null) =>
+        string? failureReason = null,
+        string? hangfireJobId = null) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -34,5 +38,30 @@ public sealed class Notification : AuditableEntity
             Status = status,
             SentAt = sentAt,
             FailureReason = failureReason,
+            HangfireJobId = hangfireJobId,
         };
+
+    public void MarkSent(DateTimeOffset sentAt)
+    {
+        Status = NotificationStatus.Sent;
+        SentAt = sentAt;
+        HangfireJobId = null;
+    }
+
+    public void MarkFailed(string reason)
+    {
+        Status = NotificationStatus.Failed;
+        FailureReason = reason;
+    }
+
+    public void MarkConsentDenied()
+    {
+        Status = NotificationStatus.ConsentDenied;
+    }
+
+    public void MarkCancelled()
+    {
+        Status = NotificationStatus.Cancelled;
+        HangfireJobId = null;
+    }
 }

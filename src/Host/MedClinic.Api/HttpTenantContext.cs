@@ -13,11 +13,13 @@ public sealed class HttpTenantContext(IHttpContextAccessor httpContextAccessor) 
     {
         get
         {
+            // Hangfire jobs have no HttpContext — they set BackgroundJobTenantScope before executing.
+            if (BackgroundJobTenantScope.IsActive)
+                return BackgroundJobTenantScope.Current;
+
             var header = httpContextAccessor.HttpContext?.Request.Headers["X-Tenant-Id"].ToString();
             if (!Guid.TryParse(header, out var tenantId))
-            {
                 throw new InvalidOperationException("No tenant could be resolved for the current request.");
-            }
 
             return tenantId;
         }

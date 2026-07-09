@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications.Infrastructure;
+using Notifications.Jobs;
 using Notifications.Persistence;
 
 [assembly: MedClinicModule(typeof(Notifications.NotificationsModule), order: 70)]
@@ -24,6 +25,10 @@ public sealed class NotificationsModule : IModule
         // Swap ConsoleNotificationSender for a real provider (Twilio, SendGrid, etc.)
         // by changing this single registration — the handlers are not affected.
         services.AddScoped<INotificationSender, ConsoleNotificationSender>();
+
+        // AppointmentReminderJob is resolved from DI so it can use IDbContextFactory and IMediator.
+        // Hangfire storage is configured in Program.cs where Hangfire.PostgreSql is available.
+        services.AddScoped<AppointmentReminderJob>();
     }
 
     // Notifications is a pure consumer: no HTTP endpoints to register.

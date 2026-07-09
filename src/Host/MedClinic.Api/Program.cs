@@ -1,6 +1,8 @@
 using Appointments;
 using Billing;
 using Core;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Notifications;
 using Encounters;
 using Identity;
@@ -37,6 +39,16 @@ var modules = new IModule[]
 foreach (var module in modules)
     module.RegisterServices(builder.Services, builder.Configuration);
 
+// Hangfire — PostgreSQL-backed job storage + in-process server.
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(opts =>
+        opts.UseNpgsqlConnection(builder.Configuration["ConnectionStrings:DefaultConnection"]!),
+        new PostgreSqlStorageOptions { SchemaName = "hangfire" }));
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -47,6 +59,8 @@ if (app.Environment.IsDevelopment())
         options.Title = "MediClinic API";
         options.Theme = ScalarTheme.Purple;
     });
+    // Hangfire dashboard — dev-only; restrict to authenticated admins in production.
+    app.UseHangfireDashboard("/hangfire");
 }
 
 app.UseHttpsRedirection();
