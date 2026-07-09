@@ -11,7 +11,8 @@ public sealed class CancelAppointmentHandler(
     IDbContextFactory<AppointmentsDbContext> dbFactory,
     ITenantContext tenantContext,
     TimeProvider timeProvider,
-    IMediator mediator)
+    IMediator mediator,
+    ClinicMetrics metrics)
     : IRequestHandler<CancelAppointmentCommand, Result<CancelAppointmentResponse>>
 {
     public async ValueTask<Result<CancelAppointmentResponse>> Handle(
@@ -45,6 +46,7 @@ public sealed class CancelAppointmentHandler(
             cancellationToken)
             .ConfigureAwait(false);
 
+        metrics.AppointmentsCancelled.Add(1);
         return Result<CancelAppointmentResponse>.Ok(
             new CancelAppointmentResponse(appointment.Id, appointment.Status.ToString()));
     }

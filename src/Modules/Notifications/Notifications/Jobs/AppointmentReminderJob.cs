@@ -1,5 +1,6 @@
 using Core;
 using Mediator;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Notifications.Domain;
@@ -19,6 +20,7 @@ public sealed class AppointmentReminderJob(
     IMediator mediator,
     INotificationSender sender,
     TimeProvider timeProvider,
+    ClinicMetrics metrics,
     ILogger<AppointmentReminderJob> logger)
 {
     public async Task SendAsync(
@@ -61,6 +63,7 @@ public sealed class AppointmentReminderJob(
         {
             record.MarkConsentDenied();
             await db.SaveChangesAsync().ConfigureAwait(false);
+            metrics.NotificationsConsentDenied.Add(1);
             return;
         }
 
@@ -74,12 +77,14 @@ public sealed class AppointmentReminderJob(
                 .SendAsync(new NotificationMessage(NotificationChannel.Sms, contact.ContactPhone, body), CancellationToken.None)
                 .ConfigureAwait(false);
             record.MarkSent(timeProvider.GetUtcNow());
+            metrics.NotificationsSent.Add(1);
         }
         catch (Exception ex)
         {
             // Log only exception type — the message may contain the phone number.
             logger.LogError("Appointment reminder SMS failed: {ExceptionType}", ex.GetType().Name);
             record.MarkFailed(ex.GetType().Name);
+            metrics.NotificationsFailed.Add(1);
         }
 
         await db.SaveChangesAsync().ConfigureAwait(false);

@@ -13,7 +13,8 @@ public sealed class BookAppointmentHandler(
     IDbContextFactory<AppointmentsDbContext> dbFactory,
     ITenantContext tenantContext,
     TimeProvider timeProvider,
-    IMediator mediator)
+    IMediator mediator,
+    ClinicMetrics metrics)
     : IRequestHandler<BookAppointmentCommand, Result<BookAppointmentResponse>>
 {
     public async ValueTask<Result<BookAppointmentResponse>> Handle(
@@ -69,6 +70,7 @@ public sealed class BookAppointmentHandler(
             cancellationToken)
             .ConfigureAwait(false);
 
+        metrics.AppointmentsBooked.Add(1);
         return Result<BookAppointmentResponse>.Ok(new BookAppointmentResponse(appointment.Id));
     }
 }

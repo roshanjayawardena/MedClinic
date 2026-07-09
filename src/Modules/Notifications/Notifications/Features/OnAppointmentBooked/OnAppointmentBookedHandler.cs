@@ -1,4 +1,5 @@
 using Appointments.Contracts.Events;
+using Core;
 using Hangfire;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,8 @@ namespace Notifications.Features.OnAppointmentBooked;
 public sealed class OnAppointmentBookedHandler(
     IDbContextFactory<NotificationsDbContext> dbFactory,
     IBackgroundJobClient backgroundJobs,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ClinicMetrics metrics)
     : INotificationHandler<AppointmentBookedIntegrationEvent>
 {
     private static readonly TimeSpan ReminderLeadTime = TimeSpan.FromHours(24);
@@ -67,5 +69,6 @@ public sealed class OnAppointmentBookedHandler(
             hangfireJobId: hangfireJobId));
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        metrics.NotificationsScheduled.Add(1);
     }
 }
