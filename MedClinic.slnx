@@ -42,4 +42,8 @@
   <Folder Name="/src/Modules/Notifications/">
     <Project Path="src/Modules/Notifications/Notifications/Notifications.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Architecture/MedClinic.Architecture.Tests/MedClinic.Architecture.Tests.csproj" />
+    <Project Path="tests/Integration/MedClinic.Integration.Tests/MedClinic.Integration.Tests.csproj" />
+  </Folder>
 </Solution>
