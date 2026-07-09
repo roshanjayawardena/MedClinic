@@ -2,6 +2,7 @@ using System.Reflection;
 using Appointments.Persistence;
 using Billing.Persistence;
 using Core;
+using Notifications.Persistence;
 using Encounters.Persistence;
 using MedClinic.Migrations.PostgreSQL;
 using MedClinic.Migrations.PostgreSQL.Migrations.Patients;
@@ -73,6 +74,13 @@ host.Services.AddDbContext<BillingDbContext>(o =>
      .ConfigureWarnings(w => w.Ignore(
          Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+host.Services.AddDbContext<NotificationsDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "notifications"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
 // Identity services are needed for RoleManager used during role seeding.
 host.Services.AddIdentityCore<ClinicUser>()
     .AddRoles<ClinicRole>()
@@ -107,6 +115,9 @@ Console.WriteLine("  ✓ Identity");
 
 await sp.GetRequiredService<BillingDbContext>().Database.MigrateAsync();
 Console.WriteLine("  ✓ Billing");
+
+await sp.GetRequiredService<NotificationsDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Notifications");
 
 // Add new modules here as they are built:
 

@@ -39,4 +39,7 @@
     <Project Path="src/Modules/Billing/Billing.Contracts/Billing.Contracts.csproj" />
     <Project Path="src/Modules/Billing/Billing/Billing.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/Notifications/Notifications.csproj" />
+  </Folder>
 </Solution>

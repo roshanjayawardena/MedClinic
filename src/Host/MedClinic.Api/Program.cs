@@ -1,6 +1,7 @@
 using Appointments;
 using Billing;
 using Core;
+using Notifications;
 using Encounters;
 using Identity;
 using Identity.Middleware;
@@ -27,6 +28,7 @@ var modules = new IModule[]
     new PrescriptionsModule(),
     new IdentityModule(),
     new BillingModule(),
+    new NotificationsModule(),
 };
 
 foreach (var module in modules)
