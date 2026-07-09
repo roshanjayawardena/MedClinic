@@ -13,7 +13,10 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediator();
+// ServiceLifetime.Scoped allows handlers to consume scoped dependencies (UserManager,
+// ICurrentUser, INotificationSender). Singleton is Mediator's default but is incompatible
+// with ASP.NET Core Identity services which are always registered as Scoped.
+builder.Services.AddMediator(o => o.ServiceLifetime = ServiceLifetime.Scoped);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ITenantContext, HttpTenantContext>();
 builder.Services.AddSingleton(TimeProvider.System);
