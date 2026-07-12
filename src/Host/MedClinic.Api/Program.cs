@@ -1,17 +1,19 @@
 using Appointments;
+using Asp.Versioning;
 using Billing;
 using Core;
 using Hangfire;
 using Hangfire.PostgreSql;
 using HealthChecks.NpgSql;
+using MedClinic.Api.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Notifications;
 using Encounters;
 using Identity;
 using Identity.Middleware;
 using MedClinic.Api;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -19,6 +21,7 @@ using Patients;
 using Prescriptions;
 using Scalar.AspNetCore;
 using Serilog;
+using Web;
 
 // Bootstrap logger catches startup exceptions before full Serilog config is read.
 Log.Logger = new LoggerConfiguration()
@@ -29,23 +32,63 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    // ── Serilog ───────────────────────────────────────────────────────────────
     builder.Host.UseSerilog((context, services, config) =>
         config
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext());
 
-    // ServiceLifetime.Scoped allows handlers to consume scoped dependencies (UserManager,
-    // ICurrentUser, INotificationSender). Singleton is Mediator's default but is incompatible
-    // with ASP.NET Core Identity services which are always registered as Scoped.
+    // ── Core services ─────────────────────────────────────────────────────────
     builder.Services.AddMediator(o => o.ServiceLifetime = ServiceLifetime.Scoped);
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddSingleton<ITenantContext, HttpTenantContext>();
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<ClinicMetrics>();
 
+    // ── RFC 9457 ProblemDetails ───────────────────────────────────────────────
+    builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    // ── API versioning ────────────────────────────────────────────────────────
+    builder.Services
+        .AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion  = new ApiVersion(1);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions  = true;
+            options.ApiVersionReader   = ApiVersionReader.Combine(
+                new HeaderApiVersionReader("api-version"),
+                new QueryStringApiVersionReader("api-version"));
+        });
+
     builder.Services.AddOpenApi();
 
+    // ── HybridCache on Valkey (Redis-compatible) ──────────────────────────────
+    var redisConnection = builder.Configuration["Redis:ConnectionString"];
+    if (!string.IsNullOrEmpty(redisConnection))
+    {
+        builder.Services.AddStackExchangeRedisCache(opts =>
+            opts.Configuration = redisConnection);
+    }
+    else
+    {
+        builder.Services.AddDistributedMemoryCache();
+    }
+    builder.Services.AddHybridCache();
+
+    // ── Idempotency middleware ────────────────────────────────────────────────
+    builder.Services.AddTransient<IdempotencyMiddleware>();
+
+    // ── Storage (MinIO / S3) ──────────────────────────────────────────────────
+    if (!string.IsNullOrEmpty(builder.Configuration["Storage:Endpoint"]))
+        builder.Services.AddSingleton<IStorageService, MinioStorageService>();
+
+    // ── Email (MailKit — production) / Console (development) ─────────────────
+    // MailKitEmailSender is wired in NotificationsModule for the INotificationSender slot.
+    // In dev the ConsoleNotificationSender stub is used automatically via module registration.
+
+    // ── Modules ───────────────────────────────────────────────────────────────
     var modules = new IModule[]
     {
         new PatientsModule(),
@@ -60,7 +103,7 @@ try
     foreach (var module in modules)
         module.RegisterServices(builder.Services, builder.Configuration);
 
-    // Hangfire — PostgreSQL-backed job storage + in-process server.
+    // ── Hangfire ──────────────────────────────────────────────────────────────
     builder.Services.AddHangfire(config => config
         .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
         .UseSimpleAssemblyNameTypeSerializer()
@@ -70,25 +113,25 @@ try
             new PostgreSqlStorageOptions { SchemaName = "hangfire" }));
     builder.Services.AddHangfireServer();
 
-    // Health checks — /health/live (liveness) and /health/ready (readiness + DB probe).
+    // ── Health checks ─────────────────────────────────────────────────────────
     var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]!;
-    builder.Services
+    var healthChecks = builder.Services
         .AddHealthChecks()
         .AddNpgSql(connectionString, name: "postgres", tags: ["ready"]);
 
-    // OpenTelemetry — traces and metrics exported via OTLP (Jaeger, Prometheus, Grafana, etc.).
+    if (!string.IsNullOrEmpty(redisConnection))
+        healthChecks.AddRedis(redisConnection, name: "valkey", tags: ["ready"]);
+
+    // ── OpenTelemetry — traces, metrics, and logs ─────────────────────────────
     var otlpEndpoint = builder.Configuration["OpenTelemetry:OtlpEndpoint"];
     builder.Services
         .AddOpenTelemetry()
-        .ConfigureResource(r => r.AddService(
-            serviceName: "MediClinic",
-            serviceVersion: "1.0"))
+        .ConfigureResource(r => r.AddService("MediClinic", serviceVersion: "1.0"))
         .WithTracing(tracing =>
         {
             tracing
                 .AddAspNetCoreInstrumentation(opts =>
                 {
-                    // Exclude health check and Hangfire dashboard requests from traces.
                     opts.Filter = ctx =>
                         !ctx.Request.Path.StartsWithSegments("/health") &&
                         !ctx.Request.Path.StartsWithSegments("/hangfire");
@@ -109,17 +152,24 @@ try
 
             if (!string.IsNullOrEmpty(otlpEndpoint))
                 metrics.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+        })
+        .WithLogging(logs =>
+        {
+            // Route Serilog-structured logs to OTLP so they appear alongside traces
+            // in Grafana / Jaeger. PHI scrubbing happens in Serilog before this sink.
+            if (!string.IsNullOrEmpty(otlpEndpoint))
+                logs.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
         });
 
     var app = builder.Build();
 
-    // Serilog request logging replaces the default ASP.NET Core request logs
-    // with a single structured line per request at completion.
+    // ── Middleware pipeline ───────────────────────────────────────────────────
+    app.UseExceptionHandler();  // GlobalExceptionHandler → RFC 9457 ProblemDetails
+
     app.UseSerilogRequestLogging(opts =>
     {
         opts.MessageTemplate =
             "HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed:0.0}ms";
-        // Exclude health check endpoints from request logs — they're too noisy.
         opts.GetLevel = (ctx, _, _) =>
             ctx.Request.Path.StartsWithSegments("/health")
                 ? Serilog.Events.LogEventLevel.Verbose
@@ -134,36 +184,35 @@ try
             options.Title = "MediClinic API";
             options.Theme = ScalarTheme.Purple;
         });
-        // Hangfire dashboard — dev-only; restrict to authenticated admins in production.
         app.UseHangfireDashboard("/hangfire");
     }
 
-    // Health endpoints — excluded from auth so load balancers can probe without a token.
+    // Health endpoints — before auth so load balancers can probe without a token.
     app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
-        Predicate = _ => false,     // liveness: no checks — if process responds it's alive
+        Predicate = _ => false,
         ResultStatusCodes =
         {
-            [HealthStatus.Healthy] = StatusCodes.Status200OK,
-            [HealthStatus.Degraded] = StatusCodes.Status200OK,
+            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
+            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
             [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
         }
     });
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
-        Predicate = check => check.Tags.Contains("ready"),   // readiness: DB must be reachable
+        Predicate = check => check.Tags.Contains("ready"),
         ResultStatusCodes =
         {
-            [HealthStatus.Healthy] = StatusCodes.Status200OK,
-            [HealthStatus.Degraded] = StatusCodes.Status200OK,
+            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
+            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
             [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
         }
     });
 
     app.UseHttpsRedirection();
     app.UseRateLimiter();
+    app.UseMiddleware<IdempotencyMiddleware>();
     app.UseAuthentication();
-    // Validates JWT clinic_id == X-Tenant-Id header — prevents cross-clinic data access.
     app.UseMiddleware<TenantClaimValidationMiddleware>();
     app.UseAuthorization();
 

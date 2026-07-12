@@ -5,7 +5,9 @@ using Identity.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Identity.Features.GetCurrentUser;
+using Identity.Features.ImpersonateUser;
 using Identity.Features.Login;
+using Identity.Features.RefreshToken;
 using Identity.Features.RegisterUser;
 using Identity.Persistence;
 using Identity.Services;
@@ -89,6 +91,8 @@ public sealed class IdentityModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         LoginEndpoint.Map(app);
+        RefreshTokenEndpoint.Map(app);
+        ImpersonateEndpoint.Map(app);
         RegisterUserEndpoint.Map(app);
         GetCurrentUserEndpoint.Map(app);
     }

@@ -11,6 +11,8 @@ public sealed class IdentityModuleDbContext(
     ITenantContext tenantContext)
     : IdentityDbContext<ClinicUser, ClinicRole, Guid>(options)
 {
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         // Identity framework tables MUST be configured before custom overrides.
@@ -25,6 +27,15 @@ public sealed class IdentityModuleDbContext(
             // IdentityDbContext inherits a Roles DbSet property — use alias DomainRoles
             // to avoid shadowing by this.Roles (DbSet<ClinicRole>) inside this method.
             user.HasQueryFilter(u => u.ClinicId == tenantContext.TenantId);
+        });
+
+        builder.Entity<RefreshToken>(rt =>
+        {
+            rt.ToTable("refresh_tokens");
+            rt.HasKey(r => r.Id);
+            rt.Property(r => r.Token).HasMaxLength(512).IsRequired();
+            rt.HasIndex(r => r.Token).IsUnique();
+            rt.HasQueryFilter(r => r.ClinicId == tenantContext.TenantId);
         });
 
         // Seed the four canonical roles with stable IDs so every migration run

@@ -1,6 +1,7 @@
 using Core;
 using Identity.Contracts;
 using Identity.Domain;
+using Identity.Persistence;
 using Identity.Services;
 using Mediator;
 using Microsoft.AspNetCore.Identity;
@@ -12,7 +13,9 @@ namespace Identity.Features.Login;
 public sealed class LoginHandler(
     UserManager<ClinicUser> userManager,
     IJwtService jwtService,
+    IdentityModuleDbContext db,
     IConfiguration configuration,
+    TimeProvider timeProvider,
     ClinicMetrics metrics,
     ILogger<LoginHandler> logger)
     : IRequestHandler<LoginCommand, Result<LoginResponse>>
@@ -46,13 +49,19 @@ public sealed class LoginHandler(
                 new Error("Auth.InvalidCredentials", "Invalid email or password."));
         }
 
-        var roles = await userManager.GetRolesAsync(user).ConfigureAwait(false);
-        var token = jwtService.GenerateToken(user, roles);
-        var expiresIn = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60) * 60;
+        var roles        = await userManager.GetRolesAsync(user).ConfigureAwait(false);
+        var accessToken  = jwtService.GenerateToken(user, roles);
+        var expiresIn    = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60) * 60;
+
+        var refreshLifetime = TimeSpan.FromDays(configuration.GetValue<int>("Jwt:RefreshTokenDays", 30));
+        var refreshToken    = Identity.Domain.RefreshToken.Create(user.Id, user.ClinicId, refreshLifetime, timeProvider);
+        db.RefreshTokens.Add(refreshToken);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation("Login succeeded: Role={Role}", string.Join(',', roles));
         metrics.LoginSuccess.Add(1);
 
-        return Result<LoginResponse>.Ok(new LoginResponse(token, "Bearer", expiresIn));
+        return Result<LoginResponse>.Ok(
+            new LoginResponse(accessToken, refreshToken.Token, "Bearer", expiresIn));
     }
 }
