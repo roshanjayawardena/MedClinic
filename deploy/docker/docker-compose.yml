@@ -1,0 +1,116 @@
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mediclinic
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mediclinic"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [backend]
+
+  # ── Valkey (Redis-compatible cache) ──────────────────────────────────────────
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: valkey-server --save 60 1 --loglevel warning
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [backend]
+
+  # ── MinIO (S3-compatible object storage) ─────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER:     ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [backend]
+
+  # ── DbMigrator — one-shot, runs before API ───────────────────────────────────
+  migrator:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/mediclinic}-migrator:${IMAGE_TAG:-latest}
+    build:
+      context: ../..
+      dockerfile: Dockerfile.migrator
+    environment:
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=mediclinic;
+        Username=postgres;Password=${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [backend]
+
+  # ── API ───────────────────────────────────────────────────────────────────────
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/mediclinic}:${IMAGE_TAG:-latest}
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    environment:
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=mediclinic;
+        Username=postgres;Password=${POSTGRES_PASSWORD}
+      Redis__ConnectionString: "valkey:6379"
+      Jwt__Secret: ${JWT_SECRET:?JWT_SECRET is required}
+      Jwt__Issuer: MediClinic
+      Jwt__Audience: MediClinic
+      Jwt__ExpiryMinutes: "60"
+      Jwt__RefreshTokenDays: "30"
+      Storage__Endpoint: "minio:9000"
+      Storage__AccessKey: ${MINIO_ACCESS_KEY}
+      Storage__SecretKey: ${MINIO_SECRET_KEY}
+      Storage__BucketName: mediclinic
+      Storage__UseSsl: "false"
+      Email__SmtpHost: ${SMTP_HOST:-localhost}
+      Email__SmtpPort: ${SMTP_PORT:-587}
+      Email__SmtpUser: ${SMTP_USER:-}
+      Email__SmtpPassword: ${SMTP_PASSWORD:-}
+      Email__FromAddress: ${EMAIL_FROM:-no-reply@mediclinic.app}
+      OpenTelemetry__OtlpEndpoint: ${OTLP_ENDPOINT:-}
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks: [backend, frontend]
+
+networks:
+  backend:
+  frontend:
+
+volumes:
+  postgres_data:
+  valkey_data:
+  minio_data:

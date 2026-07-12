@@ -11,8 +11,11 @@
   </Folder>
   <Folder Name="/src/Host/">
     <Project Path="src/Host/MedClinic.Api/MedClinic.Api.csproj" />
+    <Project Path="src/Host/MedClinic.AppHost/MedClinic.AppHost.csproj" />
     <Project Path="src/Host/MedClinic.DbMigrator/MedClinic.DbMigrator.csproj" />
+    <Project Path="src/Host/MedClinic.DemoSeeder/MedClinic.DemoSeeder.csproj" />
     <Project Path="src/Host/MedClinic.Migrations.PostgreSQL/MedClinic.Migrations.PostgreSQL.csproj" />
+    <Project Path="src/Host/MedClinic.ServiceDefaults/MedClinic.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Patients/">

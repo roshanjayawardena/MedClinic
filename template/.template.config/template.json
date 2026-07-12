@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "MediClinic",
+  "classifications": ["MediClinic", "Module", "Web API"],
+  "identity": "MediClinic.Module",
+  "name": "MediClinic Module",
+  "shortName": "mediclinic-module",
+  "description": "Scaffolds a new vertical-slice module for the MediClinic modular monolith.",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "Acme",
+  "preferNameDirectory": true,
+  "symbols": {
+    "ModuleName": {
+      "type": "parameter",
+      "description": "Module name (e.g. Billing, Inventory). Used as namespace root.",
+      "datatype": "string",
+      "replaces": "Acme",
+      "isRequired": true
+    },
+    "IncludeContracts": {
+      "type": "parameter",
+      "description": "Generate a separate .Contracts project for cross-module integration.",
+      "datatype": "bool",
+      "defaultValue": "true"
+    },
+    "IncludeTests": {
+      "type": "parameter",
+      "description": "Generate an integration test project skeleton.",
+      "datatype": "bool",
+      "defaultValue": "true"
+    }
+  },
+  "sources": [
+    {
+      "source": "./content",
+      "target": "./",
+      "exclude": [
+        ".template.config/**/*",
+        "**/.git/**"
+      ],
+      "modifiers": [
+        {
+          "condition": "(!IncludeContracts)",
+          "exclude": ["src/Modules/Acme/Acme.Contracts/**"]
+        },
+        {
+          "condition": "(!IncludeTests)",
+          "exclude": ["tests/Integration/Acme.Tests/**"]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages",
+      "manualInstructions": [{ "text": "Run 'dotnet restore'" }],
+      "actionId": "210D431B-A78B-4D2F-B2C8-564E2CD20B8B",
+      "continueOnError": true
+    }
+  ]
+}
