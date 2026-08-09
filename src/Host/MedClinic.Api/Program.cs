@@ -2,25 +2,27 @@ using Appointments;
 using Asp.Versioning;
 using Billing;
 using Core;
+using Finbuckle.MultiTenant.AspNetCore.Extensions;
+using Finbuckle.MultiTenant.Extensions;
+using OpenTelemetry.Metrics;
 using Hangfire;
 using Hangfire.PostgreSql;
 using HealthChecks.NpgSql;
+using MedClinic.Api;
 using MedClinic.Api.Infrastructure;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Notifications;
+using Notifications.Infrastructure;
 using Encounters;
 using Identity;
 using Identity.Middleware;
-using MedClinic.Api;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Patients;
 using Prescriptions;
 using Scalar.AspNetCore;
 using Serilog;
+using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 using Web;
 
 // Bootstrap logger catches startup exceptions before full Serilog config is read.
@@ -34,19 +36,56 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    // ── Aspire service defaults ────────────────────────────────────────────────
+    // Wires OpenTelemetry (traces + metrics + OTLP via OTEL_EXPORTER_OTLP_ENDPOINT),
+    // HTTP resilience handlers, service discovery, and a liveness health check.
+    builder.AddServiceDefaults();
+
     // ── Serilog ───────────────────────────────────────────────────────────────
     builder.Host.UseSerilog((context, services, config) =>
+    {
         config
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
-            .Enrich.FromLogContext());
+            .Enrich.FromLogContext();
+
+        // Application Insights sink — active when connection string is configured.
+        // Uses TelemetryConfiguration directly to avoid the Microsoft.ApplicationInsights.AspNetCore
+        // 3.x dependency conflict with Serilog.Sinks.ApplicationInsights (requires AI < 3.0.0).
+        var aiConnStr = context.Configuration["ApplicationInsights:ConnectionString"];
+        if (!string.IsNullOrEmpty(aiConnStr))
+        {
+            var telemetryConfig = TelemetryConfiguration.CreateDefault();
+            telemetryConfig.ConnectionString = aiConnStr;
+            config.WriteTo.ApplicationInsights(telemetryConfig, new TraceTelemetryConverter());
+        }
+    });
 
     // ── Core services ─────────────────────────────────────────────────────────
     builder.Services.AddMediator(o => o.ServiceLifetime = ServiceLifetime.Scoped);
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddSingleton<ITenantContext, HttpTenantContext>();
+    builder.Services.AddSingleton<ITenantContext, FinbuckleTenantContext>();
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<ClinicMetrics>();
+
+    // ── Finbuckle multi-tenancy ───────────────────────────────────────────────
+    // Header strategy reads X-Tenant-Id; PassthroughTenantStore accepts any valid GUID.
+    builder.Services
+        .AddMultiTenant<ClinicTenantInfo>()
+        .WithHeaderStrategy("X-Tenant-Id")
+        .WithStore<PassthroughTenantStore>(ServiceLifetime.Singleton);
+
+    // ── CORS ──────────────────────────────────────────────────────────────────
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? ["http://localhost:3000"];
+
+    builder.Services.AddCors(options =>
+        options.AddDefaultPolicy(policy => policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()));
 
     // ── RFC 9457 ProblemDetails ───────────────────────────────────────────────
     builder.Services.AddProblemDetails();
@@ -86,10 +125,6 @@ try
     if (!string.IsNullOrEmpty(builder.Configuration["Storage:Endpoint"]))
         builder.Services.AddSingleton<IStorageService, MinioStorageService>();
 
-    // ── Email (MailKit — production) / Console (development) ─────────────────
-    // MailKitEmailSender is wired in NotificationsModule for the INotificationSender slot.
-    // In dev the ConsoleNotificationSender stub is used automatically via module registration.
-
     // ── Modules ───────────────────────────────────────────────────────────────
     var modules = new IModule[]
     {
@@ -105,6 +140,13 @@ try
     foreach (var module in modules)
         module.RegisterServices(builder.Services, builder.Configuration);
 
+    // ── Notification sender — override module default based on credentials ────
+    // Modules register ConsoleNotificationSender as default; last registration wins.
+    if (!string.IsNullOrEmpty(builder.Configuration["SendGrid:ApiKey"]))
+        builder.Services.AddScoped<INotificationSender, SendGridEmailSender>();
+    else if (!string.IsNullOrEmpty(builder.Configuration["Email:SmtpHost"]))
+        builder.Services.AddScoped<INotificationSender, MailKitEmailSender>();
+
     // ── Hangfire ──────────────────────────────────────────────────────────────
     builder.Services.AddHangfire(config => config
         .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -116,6 +158,8 @@ try
     builder.Services.AddHangfireServer();
 
     // ── Health checks ─────────────────────────────────────────────────────────
+    // AddDefaultHealthChecks() (called via AddServiceDefaults) adds a "self" liveness check.
+    // Here we add the postgres "ready" check; redis is conditional.
     var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]!;
     var healthChecks = builder.Services
         .AddHealthChecks()
@@ -124,44 +168,13 @@ try
     if (!string.IsNullOrEmpty(redisConnection))
         healthChecks.AddRedis(redisConnection, name: "valkey", tags: ["ready"]);
 
-    // ── OpenTelemetry — traces, metrics, and logs ─────────────────────────────
-    var otlpEndpoint = builder.Configuration["OpenTelemetry:OtlpEndpoint"];
-    builder.Services
-        .AddOpenTelemetry()
-        .ConfigureResource(r => r.AddService("MediClinic", serviceVersion: "1.0"))
-        .WithTracing(tracing =>
-        {
-            tracing
-                .AddAspNetCoreInstrumentation(opts =>
-                {
-                    opts.Filter = ctx =>
-                        !ctx.Request.Path.StartsWithSegments("/health") &&
-                        !ctx.Request.Path.StartsWithSegments("/hangfire");
-                })
-                .AddHttpClientInstrumentation();
-
-            if (!string.IsNullOrEmpty(otlpEndpoint))
-                tracing.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
-
-            if (builder.Environment.IsDevelopment())
-                tracing.AddConsoleExporter();
-        })
-        .WithMetrics(metrics =>
-        {
-            metrics
-                .AddAspNetCoreInstrumentation()
-                .AddMeter(ClinicMetrics.MeterName);
-
-            if (!string.IsNullOrEmpty(otlpEndpoint))
-                metrics.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
-        })
-        .WithLogging(logs =>
-        {
-            // Route Serilog-structured logs to OTLP so they appear alongside traces
-            // in Grafana / Jaeger. PHI scrubbing happens in Serilog before this sink.
-            if (!string.IsNullOrEmpty(otlpEndpoint))
-                logs.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
-        });
+    // ── OpenTelemetry — extend Aspire defaults with clinic-specific signals ────
+    // AddServiceDefaults() has already registered AspNetCore + Http instrumentation.
+    // We extend here: runtime metrics + custom clinic business meter.
+    builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics => metrics
+            .AddRuntimeInstrumentation()
+            .AddMeter(ClinicMetrics.MeterName));
 
     var app = builder.Build();
 
@@ -189,31 +202,14 @@ try
         app.UseHangfireDashboard("/hangfire");
     }
 
-    // Health endpoints — before auth so load balancers can probe without a token.
-    app.MapHealthChecks("/health/live", new HealthCheckOptions
-    {
-        Predicate = _ => false,
-        ResultStatusCodes =
-        {
-            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
-            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
-            [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
-        }
-    });
-    app.MapHealthChecks("/health/ready", new HealthCheckOptions
-    {
-        Predicate = check => check.Tags.Contains("ready"),
-        ResultStatusCodes =
-        {
-            [HealthStatus.Healthy]   = StatusCodes.Status200OK,
-            [HealthStatus.Degraded]  = StatusCodes.Status200OK,
-            [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
-        }
-    });
+    // Health endpoints exposed via Aspire-standard /health/live and /health/ready.
+    app.MapDefaultEndpoints();
 
+    app.UseCors();                  // must be before auth and tenant resolution
     app.UseHttpsRedirection();
     app.UseRateLimiter();
     app.UseMiddleware<IdempotencyMiddleware>();
+    app.UseMultiTenant();           // resolves X-Tenant-Id → ClinicTenantInfo before auth
     app.UseAuthentication();
     app.UseMiddleware<TenantClaimValidationMiddleware>();
     app.UseAuthorization();

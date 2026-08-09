@@ -12,8 +12,8 @@
 
   <!-- ── API surface ───────────────────────────────────────────────────────── -->
   <ItemGroup Label="API">
-    <PackageVersion Include="Asp.Versioning.Http"                Version="8.1.0" />
-    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer"     Version="8.1.0" />
+    <PackageVersion Include="Asp.Versioning.Http"                Version="10.2.1" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer"     Version="10.2.1" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi"       Version="10.0.9" />
     <PackageVersion Include="Scalar.AspNetCore"                  Version="2.16.10" />
   </ItemGroup>
@@ -26,8 +26,8 @@
 
   <!-- ── Validation ───────────────────────────────────────────────────────── -->
   <ItemGroup Label="Validation">
-    <PackageVersion Include="FluentValidation"                              Version="11.11.0" />
-    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation"                              Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
   </ItemGroup>
 
   <!-- ── EF Core / Database ───────────────────────────────────────────────── -->
@@ -47,8 +47,8 @@
 
   <!-- ── Caching ───────────────────────────────────────────────────────────── -->
   <ItemGroup Label="Caching">
-    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid"           Version="9.3.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid"           Version="10.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
     <PackageVersion Include="StackExchange.Redis"                            Version="2.8.41" />
   </ItemGroup>
 
@@ -61,8 +61,13 @@
 
   <!-- ── Resilience / Service discovery ───────────────────────────────────── -->
   <ItemGroup Label="Resilience">
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience"  Version="9.5.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience"  Version="10.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0" />
+  </ItemGroup>
+
+  <!-- ── Multi-tenancy ─────────────────────────────────────────────────────── -->
+  <ItemGroup Label="MultiTenancy">
+    <PackageVersion Include="Finbuckle.MultiTenant.AspNetCore" Version="10.1.2" />
   </ItemGroup>
 
   <!-- ── Observability ─────────────────────────────────────────────────────── -->
@@ -76,11 +81,12 @@
   </ItemGroup>
 
   <ItemGroup Label="Serilog">
-    <PackageVersion Include="Serilog.AspNetCore"              Version="10.0.0" />
-    <PackageVersion Include="Serilog.Enrichers.Environment"   Version="3.0.1" />
-    <PackageVersion Include="Serilog.Enrichers.Thread"        Version="4.0.0" />
-    <PackageVersion Include="Serilog.Sinks.File"              Version="7.0.0" />
-    <PackageVersion Include="Serilog.Sinks.OpenTelemetry"     Version="4.0.0" />
+    <PackageVersion Include="Serilog.AspNetCore"                     Version="10.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.Environment"          Version="3.0.1" />
+    <PackageVersion Include="Serilog.Enrichers.Thread"               Version="4.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File"                     Version="7.0.0" />
+    <PackageVersion Include="Serilog.Sinks.OpenTelemetry"            Version="4.0.0" />
+    <PackageVersion Include="Serilog.Sinks.ApplicationInsights"      Version="5.0.1" />
   </ItemGroup>
 
   <!-- ── Health checks ─────────────────────────────────────────────────────── -->
@@ -93,6 +99,7 @@
   <ItemGroup Label="Infrastructure">
     <PackageVersion Include="MailKit"                        Version="4.13.0" />
     <PackageVersion Include="Minio"                          Version="6.0.4" />
+    <PackageVersion Include="SendGrid"                       Version="9.29.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting"  Version="10.0.0" />
   </ItemGroup>
 
