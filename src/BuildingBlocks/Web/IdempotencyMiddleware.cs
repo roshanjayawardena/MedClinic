@@ -19,26 +19,32 @@ public sealed class IdempotencyMiddleware(
     private static readonly TimeSpan KeyTtl = TimeSpan.FromHours(24);
     private static readonly string[] IdempotentMethods = ["POST", "PUT", "PATCH"];
 
-    public async Task InvokeAsync(HttpContext ctx, RequestDelegate next)
+    private static readonly Action<ILogger, string, string, Exception?> LogReplay =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(1, "IdempotentReplay"),
+            "Idempotent replay: Key={Key} Path={Path}");
+
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        if (!IdempotentMethods.Contains(ctx.Request.Method, StringComparer.OrdinalIgnoreCase))
+        if (!IdempotentMethods.Contains(context.Request.Method, StringComparer.OrdinalIgnoreCase))
         {
-            await next(ctx).ConfigureAwait(false);
+            await next(context).ConfigureAwait(false);
             return;
         }
 
-        if (!ctx.Request.Headers.TryGetValue("Idempotency-Key", out var keyValues)
+        if (!context.Request.Headers.TryGetValue("Idempotency-Key", out var keyValues)
             || string.IsNullOrWhiteSpace(keyValues.FirstOrDefault()))
         {
-            await next(ctx).ConfigureAwait(false);
+            await next(context).ConfigureAwait(false);
             return;
         }
 
         var rawKey = keyValues.First()!;
         if (!Guid.TryParse(rawKey, out _))
         {
-            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await ctx.Response.WriteAsJsonAsync(new
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new
             {
                 type   = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
                 title  = "Bad Request",
@@ -48,34 +54,32 @@ public sealed class IdempotencyMiddleware(
             return;
         }
 
-        var cacheKey = CacheKey(ctx, rawKey);
+        var cacheKey = CacheKey(context, rawKey);
         var cached   = await cache.GetStringAsync(cacheKey).ConfigureAwait(false);
 
         if (cached is not null)
         {
-            logger.LogInformation(
-                "Idempotent replay: Key={Key} Path={Path}",
-                rawKey, ctx.Request.Path);
+            LogReplay(logger, rawKey, context.Request.Path, null);
 
-            ctx.Response.Headers["X-Idempotent-Replayed"] = "true";
-            ctx.Response.ContentType = "application/json";
-            ctx.Response.StatusCode  = StatusCodes.Status200OK;
-            await ctx.Response.WriteAsync(cached).ConfigureAwait(false);
+            context.Response.Headers["X-Idempotent-Replayed"] = "true";
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode  = StatusCodes.Status200OK;
+            await context.Response.WriteAsync(cached).ConfigureAwait(false);
             return;
         }
 
         // Buffer the response so we can cache it.
-        var originalBody = ctx.Response.Body;
+        var originalBody = context.Response.Body;
         using var buffer = new MemoryStream();
-        ctx.Response.Body = buffer;
+        context.Response.Body = buffer;
 
-        await next(ctx).ConfigureAwait(false);
+        await next(context).ConfigureAwait(false);
 
         buffer.Seek(0, SeekOrigin.Begin);
         var responseBody = await new StreamReader(buffer).ReadToEndAsync().ConfigureAwait(false);
 
         // Only cache successful responses (2xx).
-        if (ctx.Response.StatusCode is >= 200 and < 300)
+        if (context.Response.StatusCode is >= 200 and < 300)
         {
             await cache.SetStringAsync(cacheKey, responseBody, new DistributedCacheEntryOptions
             {
@@ -85,14 +89,14 @@ public sealed class IdempotencyMiddleware(
 
         buffer.Seek(0, SeekOrigin.Begin);
         await buffer.CopyToAsync(originalBody).ConfigureAwait(false);
-        ctx.Response.Body = originalBody;
+        context.Response.Body = originalBody;
     }
 
-    private static string CacheKey(HttpContext ctx, string idempotencyKey)
+    private static string CacheKey(HttpContext context, string idempotencyKey)
     {
         // Key is scoped to tenant + path + idempotency key to prevent cross-tenant replay.
-        var tenantId = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "global";
-        var raw      = $"{tenantId}:{ctx.Request.Path}:{idempotencyKey}";
+        var tenantId = context.Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "global";
+        var raw      = $"{tenantId}:{context.Request.Path}:{idempotencyKey}";
         var hash     = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
         return $"idempotency:{Convert.ToHexString(hash).ToLowerInvariant()}";
     }

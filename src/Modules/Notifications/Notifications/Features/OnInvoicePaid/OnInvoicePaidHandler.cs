@@ -17,6 +17,14 @@ public sealed class OnInvoicePaidHandler(
     ILogger<OnInvoicePaidHandler> logger)
     : INotificationHandler<InvoicePaidIntegrationEvent>
 {
+    private static readonly Action<ILogger, string, Exception?> LogContactFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1, "InvoicePaidContactFailed"),
+            "GetPatientContact failed: {Code}");
+
+    private static readonly Action<ILogger, string, Exception?> LogSmsFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2, "InvoicePaidSmsFailed"),
+            "SMS send failed: {ExceptionType}");
+
     public async ValueTask Handle(
         InvoicePaidIntegrationEvent notification,
         CancellationToken cancellationToken)
@@ -40,7 +48,7 @@ public sealed class OnInvoicePaidHandler(
 
         if (contactResult.IsFailure)
         {
-            logger.LogWarning("GetPatientContact failed: {Code}", contactResult.Error!.Code);
+            LogContactFailed(logger, contactResult.Error!.Code, null);
             db.Notifications.Add(Notification.Record(
                 notification.PatientId,
                 appointmentId: null,
@@ -84,7 +92,7 @@ public sealed class OnInvoicePaidHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError("SMS send failed: {ExceptionType}", ex.GetType().Name);
+            LogSmsFailed(logger, ex.GetType().Name, null);
             status = NotificationStatus.Failed;
             failureReason = ex.GetType().Name;
         }

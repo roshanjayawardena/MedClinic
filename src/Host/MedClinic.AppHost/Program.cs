@@ -31,36 +31,36 @@ var valkey = builder
     .WithLifetime(ContainerLifetime.Persistent);
 
 // ── MinIO (S3-compatible object storage) ─────────────────────────────────────
-var minio = builder
-    .AddContainer("minio", "minio/minio", "latest")
-    .WithArgs("server", "/data", "--console-address", ":9001")
-    .WithHttpEndpoint(port: 9000, targetPort: 9000, name: "api")
-    .WithHttpEndpoint(port: 9001, targetPort: 9001, name: "console")
-    .WithEnvironment("MINIO_ROOT_USER", "minioadmin")
-    .WithEnvironment("MINIO_ROOT_PASSWORD", "minioadmin123")
-    .WithBindMount("mediclinic-minio-data", "/data")
-    .WithLifetime(ContainerLifetime.Persistent);
+//var minio = builder
+//    .AddContainer("minio", "minio/minio", "latest")
+//    .WithArgs("server", "/data", "--console-address", ":9001")
+//    .WithHttpEndpoint(port: 9000, targetPort: 9000, name: "api")
+//    .WithHttpEndpoint(port: 9001, targetPort: 9001, name: "console")
+//    .WithEnvironment("MINIO_ROOT_USER", "minioadmin")
+//    .WithEnvironment("MINIO_ROOT_PASSWORD", "minioadmin123")
+//    .WithBindMount("mediclinic-minio-data", "/data")
+//    .WithLifetime(ContainerLifetime.Persistent);
 
 // ── DbMigrator — one-shot, runs before API starts ────────────────────────────
 var migrator = builder
     .AddProject<Projects.MedClinic_DbMigrator>("migrator")
-    .WithReference(db)
+    .WithReference(db, connectionName: "DefaultConnection")
     .WithEnvironment("Jwt__Secret", jwtSecret)
     .WaitFor(db);
 
 // ── DemoSeeder — one-shot, runs after migrations ──────────────────────────────
 var seeder = builder
     .AddProject<Projects.MedClinic_DemoSeeder>("seeder")
-    .WithReference(db)
+    .WithReference(db, connectionName: "DefaultConnection")
     .WaitForCompletion(migrator);
 
 // ── API ───────────────────────────────────────────────────────────────────────
 builder
     .AddProject<Projects.MedClinic_Api>("api")
-    .WithReference(db)
+    .WithReference(db, connectionName: "DefaultConnection")
     .WithReference(valkey)
     .WithEnvironment("Jwt__Secret", jwtSecret)
-    .WithEnvironment("Storage__Endpoint", minio.GetEndpoint("api"))
+    //.WithEnvironment("Storage__Endpoint", minio.GetEndpoint("api"))
     .WithEnvironment("Storage__AccessKey", "minioadmin")
     .WithEnvironment("Storage__SecretKey", "minioadmin123")
     .WithEnvironment("Storage__BucketName", "mediclinic")

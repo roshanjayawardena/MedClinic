@@ -26,6 +26,10 @@ public sealed class ImpersonateHandler(
     ILogger<ImpersonateHandler> logger)
     : IRequestHandler<ImpersonateUserCommand, Result<ImpersonateUserResponse>>
 {
+    private static readonly Action<ILogger, Guid, Guid, Exception?> LogImpersonation =
+        LoggerMessage.Define<Guid, Guid>(LogLevel.Warning, new EventId(1, "Impersonation"),
+            "Impersonation: Admin={AdminId} impersonating User={TargetId}");
+
     public async ValueTask<Result<ImpersonateUserResponse>> Handle(
         ImpersonateUserCommand command,
         CancellationToken cancellationToken)
@@ -69,14 +73,12 @@ public sealed class ImpersonateHandler(
             audience:           configuration["Jwt:Audience"],
             claims:             claims,
             notBefore:          now.UtcDateTime,
-            expires:            now.AddMinutes(15).UtcDateTime,  // short-lived
+            expires:            now.AddMinutes(15).UtcDateTime,
             signingCredentials: credentials);
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        logger.LogWarning(
-            "Impersonation: Admin={AdminId} impersonating User={TargetId}",
-            currentUser.UserId, target.Id);
+        LogImpersonation(logger, currentUser.UserId, target.Id, null);
 
         return Result<ImpersonateUserResponse>.Ok(new ImpersonateUserResponse(
             tokenString, "Bearer", 900, target.Id));

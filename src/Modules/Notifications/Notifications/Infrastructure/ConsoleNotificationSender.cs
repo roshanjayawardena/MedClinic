@@ -9,14 +9,14 @@ namespace Notifications.Infrastructure;
 /// </summary>
 public sealed class ConsoleNotificationSender(ILogger<ConsoleNotificationSender> logger) : INotificationSender
 {
+    private static readonly Action<ILogger, string, int, Exception?> LogStub =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1, "NotificationStub"),
+            "[NOTIFICATION STUB] Channel={Channel} Template body length={Length} chars. (recipient suppressed — PHI)");
+
     public Task SendAsync(NotificationMessage message, CancellationToken cancellationToken)
     {
         // IMPORTANT: Never log message.Recipient — it is PHI (patient phone number or email).
-        logger.LogInformation(
-            "[NOTIFICATION STUB] Channel={Channel} Template body length={Length} chars. (recipient suppressed — PHI)",
-            message.Channel,
-            message.Body.Length);
-
+        LogStub(logger, message.Channel.ToString(), message.Body.Length, null);
         return Task.CompletedTask;
     }
 }

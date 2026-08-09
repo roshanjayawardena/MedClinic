@@ -12,17 +12,20 @@ namespace Web;
 public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
     : IExceptionHandler
 {
+    // High-performance log delegate — avoids boxing and allocation on hot path.
+    private static readonly Action<ILogger, string, string, string, Exception?> LogUnhandled =
+        LoggerMessage.Define<string, string, string>(
+            LogLevel.Error,
+            new EventId(1, "UnhandledException"),
+            "Unhandled {ExceptionType} on {Method} {Path}");
+
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext ctx,
+        HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
         // Log the exception type (never the message — may contain PHI or secrets).
-        logger.LogError(
-            "Unhandled {ExceptionType} on {Method} {Path}",
-            exception.GetType().Name,
-            ctx.Request.Method,
-            ctx.Request.Path);
+        LogUnhandled(logger, exception.GetType().Name, httpContext.Request.Method, httpContext.Request.Path, null);
 
         var problem = new ProblemDetails
         {
@@ -30,13 +33,13 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             Title    = "An unexpected error occurred",
             Status   = StatusCodes.Status500InternalServerError,
             Detail   = "The server encountered an error processing your request.",
-            Instance = ctx.Request.Path,
+            Instance = httpContext.Request.Path,
         };
 
-        problem.Extensions["traceId"] = ctx.TraceIdentifier;
+        problem.Extensions["traceId"] = httpContext.TraceIdentifier;
 
-        ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        await ctx.Response.WriteAsJsonAsync(problem, cancellationToken).ConfigureAwait(false);
+        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

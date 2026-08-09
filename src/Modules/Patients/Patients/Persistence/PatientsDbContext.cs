@@ -5,12 +5,20 @@ using Persistence;
 
 namespace Patients.Persistence;
 
-public sealed class PatientsDbContext(
-    DbContextOptions<PatientsDbContext> options,
-    ITenantContext tenantContext,
-    TimeProvider timeProvider)
-    : BaseDbContext<PatientsDbContext>(options, tenantContext, timeProvider)
+public sealed class PatientsDbContext
+    : BaseDbContext<PatientsDbContext>
 {
+    private readonly ITenantContext _tenantContext;
+
+    public PatientsDbContext(
+        DbContextOptions<PatientsDbContext> options,
+        ITenantContext tenantContext,
+        TimeProvider timeProvider)
+        : base(options, tenantContext, timeProvider)
+    {
+        _tenantContext = tenantContext;
+    }
+
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Allergy> Allergies => Set<Allergy>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
@@ -49,7 +57,7 @@ public sealed class PatientsDbContext(
             audit.Property(a => a.EntityId).HasMaxLength(100).IsRequired();
             audit.Property(a => a.PerformedBy).HasMaxLength(200);
             audit.HasIndex(a => a.TenantId);
-            audit.HasQueryFilter(a => a.TenantId == tenantContext.TenantId);
+            audit.HasQueryFilter(a => a.TenantId == _tenantContext.TenantId);
         });
 
         // Always call base LAST — it applies the global tenant + soft-delete filter

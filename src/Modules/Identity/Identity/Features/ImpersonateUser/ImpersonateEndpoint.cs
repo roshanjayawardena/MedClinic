@@ -20,7 +20,7 @@ public static class ImpersonateEndpoint
             var result = await mediator.Send(command, ct).ConfigureAwait(false);
             return result.IsSuccess
                 ? TypedResults.Ok(result.Value)
-                : result.Error.ToProblemResult(ctx);
+                : result.Error!.ToProblemResult(ctx);
         })
         .RequireAuthorization(Permissions.UsersManage)
         .WithName("ImpersonateUser")

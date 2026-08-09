@@ -28,6 +28,10 @@ var host = new HostApplicationBuilder(new HostApplicationBuilderSettings
 var connStr = host.Configuration["ConnectionStrings:DefaultConnection"]
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing from configuration.");
 
+// Alpine Postgres containers don't have SSL configured.
+if (!connStr.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase))
+    connStr = connStr.TrimEnd(';') + ";SSL Mode=Disable;Trust Server Certificate=true";
+
 var tenantContext = new MigrationTenantContext();
 
 // Register each module's DbContext pointing at the centralized migrations assembly.

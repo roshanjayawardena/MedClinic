@@ -19,7 +19,7 @@ public static class RefreshTokenEndpoint
             var result = await mediator.Send(command, ct).ConfigureAwait(false);
             return result.IsSuccess
                 ? TypedResults.Ok(result.Value)
-                : result.Error.ToProblemResult(ctx);
+                : result.Error!.ToProblemResult(ctx);
         })
         .AllowAnonymous()
         .WithName("RefreshToken")

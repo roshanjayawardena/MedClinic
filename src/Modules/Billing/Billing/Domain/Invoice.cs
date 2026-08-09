@@ -40,6 +40,12 @@ public sealed class Invoice : AuditableEntity
         return invoice;
     }
 
+    public void AddLineItem(InvoiceLineItem item)
+    {
+        _lineItems.Add(item);
+        TotalAmount = _lineItems.Sum(l => l.LineTotal);
+    }
+
     public Result Issue(DateTimeOffset now)
     {
         if (Status != InvoiceStatus.Draft)

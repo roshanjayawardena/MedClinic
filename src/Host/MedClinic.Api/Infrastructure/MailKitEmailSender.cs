@@ -17,6 +17,10 @@ public sealed class MailKitEmailSender(
     IConfiguration configuration,
     ILogger<MailKitEmailSender> logger) : INotificationSender
 {
+    private static readonly Action<ILogger, string, Exception?> LogSent =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1, "EmailSent"),
+            "Email sent via MailKit: Channel={Channel}");
+
     public async Task SendAsync(NotificationMessage message, CancellationToken cancellationToken)
     {
         if (message.Channel != NotificationChannel.Email)
@@ -49,6 +53,6 @@ public sealed class MailKitEmailSender(
         await smtp.SendAsync(mimeMessage, cancellationToken).ConfigureAwait(false);
         await smtp.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation("Email sent via MailKit: Channel={Channel}", message.Channel);
+        LogSent(logger, message.Channel.ToString(), null);
     }
 }

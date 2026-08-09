@@ -5,12 +5,20 @@ using Prescriptions.Domain;
 
 namespace Prescriptions.Persistence;
 
-public sealed class PrescriptionsDbContext(
-    DbContextOptions<PrescriptionsDbContext> options,
-    ITenantContext tenantContext,
-    TimeProvider timeProvider)
-    : BaseDbContext<PrescriptionsDbContext>(options, tenantContext, timeProvider)
+public sealed class PrescriptionsDbContext
+    : BaseDbContext<PrescriptionsDbContext>
 {
+    private readonly ITenantContext _tenantContext;
+
+    public PrescriptionsDbContext(
+        DbContextOptions<PrescriptionsDbContext> options,
+        ITenantContext tenantContext,
+        TimeProvider timeProvider)
+        : base(options, tenantContext, timeProvider)
+    {
+        _tenantContext = tenantContext;
+    }
+
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<ClosedEncounterRecord> ClosedEncounters => Set<ClosedEncounterRecord>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
@@ -38,7 +46,7 @@ public sealed class PrescriptionsDbContext(
             r.ToTable("closed_encounter_records");
             r.HasKey(x => x.EncounterId);
             r.HasIndex(x => x.TenantId);
-            r.HasQueryFilter(x => x.TenantId == tenantContext.TenantId);
+            r.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId);
         });
 
         // AuditEntry is append-only and not an AuditableEntity — filter manually.
@@ -51,7 +59,7 @@ public sealed class PrescriptionsDbContext(
             audit.Property(a => a.EntityId).HasMaxLength(100).IsRequired();
             audit.Property(a => a.PerformedBy).HasMaxLength(200);
             audit.HasIndex(a => a.TenantId);
-            audit.HasQueryFilter(a => a.TenantId == tenantContext.TenantId);
+            audit.HasQueryFilter(a => a.TenantId == _tenantContext.TenantId);
         });
 
         base.OnModelCreating(modelBuilder);

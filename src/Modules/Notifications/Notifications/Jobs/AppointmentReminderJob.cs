@@ -23,6 +23,14 @@ public sealed class AppointmentReminderJob(
     ClinicMetrics metrics,
     ILogger<AppointmentReminderJob> logger)
 {
+    private static readonly Action<ILogger, string, Exception?> LogContactFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1, "ReminderContactFailed"),
+            "Reminder job: GetPatientContact failed: {Code}");
+
+    private static readonly Action<ILogger, string, Exception?> LogSmsFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2, "ReminderSmsFailed"),
+            "Appointment reminder SMS failed: {ExceptionType}");
+
     public async Task SendAsync(
         Guid appointmentId,
         Guid patientId,
@@ -51,7 +59,7 @@ public sealed class AppointmentReminderJob(
 
         if (contactResult.IsFailure)
         {
-            logger.LogWarning("Reminder job: GetPatientContact failed: {Code}", contactResult.Error!.Code);
+            LogContactFailed(logger, contactResult.Error!.Code, null);
             record.MarkFailed(contactResult.Error.Code);
             await db.SaveChangesAsync().ConfigureAwait(false);
             return;
@@ -82,7 +90,7 @@ public sealed class AppointmentReminderJob(
         catch (Exception ex)
         {
             // Log only exception type — the message may contain the phone number.
-            logger.LogError("Appointment reminder SMS failed: {ExceptionType}", ex.GetType().Name);
+            LogSmsFailed(logger, ex.GetType().Name, null);
             record.MarkFailed(ex.GetType().Name);
             metrics.NotificationsFailed.Add(1);
         }

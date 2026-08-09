@@ -1,0 +1,108 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- ── Aspire ────────────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.AppHost"       Version="9.3.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL"    Version="9.3.0" />
+    <PackageVersion Include="Aspire.Hosting.Redis"         Version="9.3.0" />
+  </ItemGroup>
+
+  <!-- ── API surface ───────────────────────────────────────────────────────── -->
+  <ItemGroup Label="API">
+    <PackageVersion Include="Asp.Versioning.Http"                Version="8.1.0" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer"     Version="8.1.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi"       Version="10.0.9" />
+    <PackageVersion Include="Scalar.AspNetCore"                  Version="2.16.10" />
+  </ItemGroup>
+
+  <!-- ── Mediator (source-gen CQRS) ───────────────────────────────────────── -->
+  <ItemGroup Label="Mediator">
+    <PackageVersion Include="Mediator.Abstractions"   Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
+  </ItemGroup>
+
+  <!-- ── Validation ───────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Validation">
+    <PackageVersion Include="FluentValidation"                              Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+  </ItemGroup>
+
+  <!-- ── EF Core / Database ───────────────────────────────────────────────── -->
+  <ItemGroup Label="EF Core">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore"        Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- ── Identity / Auth ──────────────────────────────────────────────────── -->
+  <ItemGroup Label="Identity">
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer"   Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens"                  Version="8.11.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                 Version="8.11.0" />
+  </ItemGroup>
+
+  <!-- ── Caching ───────────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Caching">
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid"           Version="9.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.7" />
+    <PackageVersion Include="StackExchange.Redis"                            Version="2.8.41" />
+  </ItemGroup>
+
+  <!-- ── Background jobs ───────────────────────────────────────────────────── -->
+  <ItemGroup Label="Hangfire">
+    <PackageVersion Include="Hangfire.AspNetCore"  Version="1.8.23" />
+    <PackageVersion Include="Hangfire.Core"        Version="1.8.23" />
+    <PackageVersion Include="Hangfire.PostgreSql"  Version="1.21.1" />
+  </ItemGroup>
+
+  <!-- ── Resilience / Service discovery ───────────────────────────────────── -->
+  <ItemGroup Label="Resilience">
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience"  Version="9.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.3.0" />
+  </ItemGroup>
+
+  <!-- ── Observability ─────────────────────────────────────────────────────── -->
+  <ItemGroup Label="OpenTelemetry">
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting"              Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console"                Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"  Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore"      Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http"            Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime"         Version="1.10.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Serilog">
+    <PackageVersion Include="Serilog.AspNetCore"              Version="10.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.Environment"   Version="3.0.1" />
+    <PackageVersion Include="Serilog.Enrichers.Thread"        Version="4.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File"              Version="7.0.0" />
+    <PackageVersion Include="Serilog.Sinks.OpenTelemetry"     Version="4.0.0" />
+  </ItemGroup>
+
+  <!-- ── Health checks ─────────────────────────────────────────────────────── -->
+  <ItemGroup Label="HealthChecks">
+    <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Redis"  Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- ── Infrastructure ────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Infrastructure">
+    <PackageVersion Include="MailKit"                        Version="4.13.0" />
+    <PackageVersion Include="Minio"                          Version="6.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting"  Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- ── Testing ────────────────────────────────────────────────────────────── -->
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk"          Version="17.12.0" />
+    <PackageVersion Include="xunit"                           Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio"       Version="2.8.2" />
+    <PackageVersion Include="FluentAssertions"                Version="6.12.0" />
+    <PackageVersion Include="NetArchTest.Rules"               Version="1.3.2" />
+    <PackageVersion Include="Testcontainers.PostgreSql"       Version="4.4.0" />
+  </ItemGroup>
+</Project>

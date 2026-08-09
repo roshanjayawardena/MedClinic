@@ -30,14 +30,14 @@ public static class ProblemDetailsExtensions
 
     private static (int status, string type) MapErrorCode(string code) => code switch
     {
-        var c when c.EndsWith(".NotFound")          => (404, "https://tools.ietf.org/html/rfc9110#section-15.5.5"),
-        var c when c.EndsWith(".Conflict")          => (409, "https://tools.ietf.org/html/rfc9110#section-15.5.10"),
-        var c when c.EndsWith(".Forbidden")         => (403, "https://tools.ietf.org/html/rfc9110#section-15.5.4"),
-        var c when c.EndsWith(".Unauthorized")      => (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
-        var c when c.EndsWith(".Unprocessable")     => (422, "https://tools.ietf.org/html/rfc9110#section-15.5.21"),
-        var c when c.StartsWith("Auth.")            => (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
-        var c when c.EndsWith(".InvalidCredentials")=> (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
-        _                                           => (400, "https://tools.ietf.org/html/rfc9110#section-15.5.1"),
+        var c when c.EndsWith(".NotFound",           StringComparison.Ordinal) => (404, "https://tools.ietf.org/html/rfc9110#section-15.5.5"),
+        var c when c.EndsWith(".Conflict",           StringComparison.Ordinal) => (409, "https://tools.ietf.org/html/rfc9110#section-15.5.10"),
+        var c when c.EndsWith(".Forbidden",          StringComparison.Ordinal) => (403, "https://tools.ietf.org/html/rfc9110#section-15.5.4"),
+        var c when c.EndsWith(".Unauthorized",       StringComparison.Ordinal) => (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
+        var c when c.EndsWith(".Unprocessable",      StringComparison.Ordinal) => (422, "https://tools.ietf.org/html/rfc9110#section-15.5.21"),
+        var c when c.StartsWith("Auth.",             StringComparison.Ordinal) => (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
+        var c when c.EndsWith(".InvalidCredentials", StringComparison.Ordinal) => (401, "https://tools.ietf.org/html/rfc9110#section-15.5.2"),
+        _                                                                       => (400, "https://tools.ietf.org/html/rfc9110#section-15.5.1"),
     };
 
     private static string TitleFor(int status) => status switch

@@ -5,12 +5,20 @@ using Persistence;
 
 namespace Encounters.Persistence;
 
-public sealed class EncountersDbContext(
-    DbContextOptions<EncountersDbContext> options,
-    ITenantContext tenantContext,
-    TimeProvider timeProvider)
-    : BaseDbContext<EncountersDbContext>(options, tenantContext, timeProvider)
+public sealed class EncountersDbContext
+    : BaseDbContext<EncountersDbContext>
 {
+    private readonly ITenantContext _tenantContext;
+
+    public EncountersDbContext(
+        DbContextOptions<EncountersDbContext> options,
+        ITenantContext tenantContext,
+        TimeProvider timeProvider)
+        : base(options, tenantContext, timeProvider)
+    {
+        _tenantContext = tenantContext;
+    }
+
     public DbSet<Encounter> Encounters => Set<Encounter>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
@@ -72,7 +80,7 @@ public sealed class EncountersDbContext(
             audit.Property(a => a.EntityId).HasMaxLength(100).IsRequired();
             audit.Property(a => a.PerformedBy).HasMaxLength(200);
             audit.HasIndex(a => a.TenantId);
-            audit.HasQueryFilter(a => a.TenantId == tenantContext.TenantId);
+            audit.HasQueryFilter(a => a.TenantId == _tenantContext.TenantId);
         });
 
         // Always call base LAST — applies global tenant + soft-delete filter to Encounter.

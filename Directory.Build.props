@@ -1,0 +1,54 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Exclude generated source-gen output from warning enforcement -->
+    <WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!-- Enforce consistent analysis across all projects -->
+  <PropertyGroup>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+  </PropertyGroup>
+
+  <!--
+    Suppress NuGet audit warnings for known vulnerable *transitive* dependencies we do not
+    directly control. These are pulled in by Aspire.Hosting.* and MailKit.
+    Re-evaluate on each package upgrade; remove entries once the upstream fixes the dep.
+  -->
+  <ItemGroup Label="NuGetAuditSuppress">
+    <!-- MessagePack pulled by Aspire.Hosting.* via KubernetesClient -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2f33-pr97-265q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2x83-8g95-xh59" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cj9g-3mj2-g8vv" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cxmj-83gh-fp49" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-hv8m-jj95-wg3x" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-q2h6-ghwm-5qm8" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-qhmf-xw27-6rqr" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-v72x-2h86-7f8m" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-vh6j-jc39-fggf" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w567-gjr2-hm5j" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-wfr3-xj75-pfwh" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w7r3-mgwf-4mqq" />
+    <!-- Newtonsoft.Json pulled transitively by Aspire / EF tooling -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5crp-9r3c-p9vr" />
+    <!-- Microsoft.OpenApi pulled by Aspire tooling (not our direct ref) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-v5pm-xwqc-g5wc" />
+    <!-- MailKit / MimeKit moderate vulnerability -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-9j88-vvj5-vhgr" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g7hc-96xr-gvvx" />
+    <!-- System.Security.Cryptography.Xml 9.0.0 pulled transitively by EF Core Design tooling -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-6588-8gv4-xfgh" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8q5v-6pqq-x66h" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cvvh-rhrc-wg4q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g8r8-53c2-pm3f" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-mmjf-rqrv-855v" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w3x6-4m5h-cxqf" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-23rf-6693-g89p" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-37gx-xxp4-5rgx" />
+  </ItemGroup>
+</Project>

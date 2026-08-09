@@ -14,6 +14,8 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((ctx, services) =>
     {
         var conn = ctx.Configuration.GetConnectionString("DefaultConnection")!;
+        if (!conn.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase))
+            conn = conn.TrimEnd(';') + ";SSL Mode=Disable;Trust Server Certificate=true";
 
         services.AddDbContext<IdentityModuleDbContext>((sp, opts) =>
             opts.UseNpgsql(conn, npg =>
@@ -32,8 +34,7 @@ var host = Host.CreateDefaultBuilder(args)
             opts.Password.RequireUppercase      = false;
         })
         .AddRoles<ClinicRole>()
-        .AddEntityFrameworkStores<IdentityModuleDbContext>()
-        .AddDefaultTokenProviders();
+        .AddEntityFrameworkStores<IdentityModuleDbContext>();
     })
     .Build();
 

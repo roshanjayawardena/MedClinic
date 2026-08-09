@@ -24,9 +24,11 @@ using Serilog;
 using Web;
 
 // Bootstrap logger catches startup exceptions before full Serilog config is read.
+#pragma warning disable CA1305 // Serilog's Console sink has no IFormatProvider overload
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
+#pragma warning restore CA1305
 
 try
 {

@@ -5,12 +5,16 @@ using Persistence;
 
 namespace Billing.Persistence;
 
-public sealed class BillingDbContext(
-    DbContextOptions<BillingDbContext> options,
-    ITenantContext tenantContext,
-    TimeProvider timeProvider)
-    : BaseDbContext<BillingDbContext>(options, tenantContext, timeProvider)
+public sealed class BillingDbContext : BaseDbContext<BillingDbContext>
 {
+    public BillingDbContext(
+        DbContextOptions<BillingDbContext> options,
+        ITenantContext tenantContext,
+        TimeProvider timeProvider)
+        : base(options, tenantContext, timeProvider)
+    {
+    }
+
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

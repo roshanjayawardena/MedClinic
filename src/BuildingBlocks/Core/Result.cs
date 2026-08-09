@@ -1,3 +1,6 @@
+#pragma warning disable CA1716 // 'Error' conflicts with a reserved VB keyword — intentional; this is a C#-only codebase
+#pragma warning disable CA1000 // Static members on generic types — Result<T> factory methods are the established pattern here
+
 namespace Core;
 
 public sealed record Error(string Code, string Message);

@@ -24,6 +24,10 @@ public sealed class RefreshTokenHandler(
     ILogger<RefreshTokenHandler> logger)
     : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
 {
+    private static readonly Action<ILogger, string, Exception?> LogRefreshFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1, "RefreshFailed"),
+            "Refresh failed: {Reason}");
+
     public async ValueTask<Result<RefreshTokenResponse>> Handle(
         RefreshTokenCommand command,
         CancellationToken cancellationToken)
@@ -42,7 +46,7 @@ public sealed class RefreshTokenHandler(
 
         if (stored is null || !stored.IsActive(timeProvider))
         {
-            logger.LogWarning("Refresh failed: {Reason}", stored is null ? "NotFound" : "TokenInactive");
+            LogRefreshFailed(logger, stored is null ? "NotFound" : "TokenInactive", null);
             return Result<RefreshTokenResponse>.Fail(
                 new Error("Auth.InvalidToken", "Refresh token is invalid or expired."));
         }

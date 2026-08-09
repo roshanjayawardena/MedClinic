@@ -20,6 +20,14 @@ public sealed class LoginHandler(
     ILogger<LoginHandler> logger)
     : IRequestHandler<LoginCommand, Result<LoginResponse>>
 {
+    private static readonly Action<ILogger, string, Exception?> LogFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1, "LoginFailed"),
+            "Login failed: {Reason}");
+
+    private static readonly Action<ILogger, string, Exception?> LogSucceeded =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2, "LoginSucceeded"),
+            "Login succeeded: Role={Role}");
+
     public async ValueTask<Result<LoginResponse>> Handle(
         LoginCommand command,
         CancellationToken cancellationToken)
@@ -31,7 +39,7 @@ public sealed class LoginHandler(
         if (user is null || !user.IsActive)
         {
             // Never log command.Email — it is PHI. Log only the failure category.
-            logger.LogWarning("Login failed: {Reason}", "UserNotFound");
+            LogFailed(logger, "UserNotFound", null);
             metrics.LoginFailed.Add(1);
             return Result<LoginResponse>.Fail(
                 new Error("Auth.InvalidCredentials", "Invalid email or password."));
@@ -43,7 +51,7 @@ public sealed class LoginHandler(
 
         if (!passwordValid)
         {
-            logger.LogWarning("Login failed: {Reason}", "InvalidPassword");
+            LogFailed(logger, "InvalidPassword", null);
             metrics.LoginFailed.Add(1);
             return Result<LoginResponse>.Fail(
                 new Error("Auth.InvalidCredentials", "Invalid email or password."));
@@ -58,7 +66,7 @@ public sealed class LoginHandler(
         db.RefreshTokens.Add(refreshToken);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation("Login succeeded: Role={Role}", string.Join(',', roles));
+        LogSucceeded(logger, string.Join(',', roles), null);
         metrics.LoginSuccess.Add(1);
 
         return Result<LoginResponse>.Ok(
