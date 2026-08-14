@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Finbuckle.MultiTenant.AspNetCore" />
     <PackageReference Include="Hangfire.Core" />
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="Mediator.Abstractions" />
@@ -19,6 +20,7 @@
     <ProjectReference Include="..\..\Patients\Patients.Contracts\Patients.Contracts.csproj" />
     <ProjectReference Include="..\..\Appointments\Appointments.Contracts\Appointments.Contracts.csproj" />
     <ProjectReference Include="..\..\Billing\Billing.Contracts\Billing.Contracts.csproj" />
+    <ProjectReference Include="..\..\Clinics\Clinics.Contracts\Clinics.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

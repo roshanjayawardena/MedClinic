@@ -1,6 +1,7 @@
 using Appointments;
 using Asp.Versioning;
 using Billing;
+using Clinics;
 using Core;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.Extensions;
@@ -69,11 +70,11 @@ try
     builder.Services.AddSingleton<ClinicMetrics>();
 
     // ── Finbuckle multi-tenancy ───────────────────────────────────────────────
-    // Header strategy reads X-Tenant-Id; PassthroughTenantStore accepts any valid GUID.
+    // Header strategy reads X-Tenant-Id; DatabaseClinicStore validates against the clinics table.
     builder.Services
         .AddMultiTenant<ClinicTenantInfo>()
         .WithHeaderStrategy("X-Tenant-Id")
-        .WithStore<PassthroughTenantStore>(ServiceLifetime.Singleton);
+        .WithStore<DatabaseClinicStore>(ServiceLifetime.Scoped);
 
     // ── CORS ──────────────────────────────────────────────────────────────────
     var allowedOrigins = builder.Configuration
@@ -103,6 +104,13 @@ try
                 new QueryStringApiVersionReader("api-version"));
         });
 
+    builder.Services.AddAuthorization(options =>
+    {
+        // SystemAdmin: no clinic_id claim required — used for cross-tenant management endpoints.
+        options.AddPolicy("SystemAdmin", policy =>
+            policy.RequireRole(Identity.Domain.Roles.SystemAdmin));
+    });
+
     builder.Services.AddOpenApi();
 
     // ── HybridCache on Valkey (Redis-compatible) ──────────────────────────────
@@ -128,6 +136,7 @@ try
     // ── Modules ───────────────────────────────────────────────────────────────
     var modules = new IModule[]
     {
+        new ClinicsModule(),
         new PatientsModule(),
         new AppointmentsModule(),
         new EncountersModule(),
