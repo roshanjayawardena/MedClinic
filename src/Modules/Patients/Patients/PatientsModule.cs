@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Patients.Features.AddAllergy;
 using Patients.Features.GetPatientAllergies;
 using Patients.Features.GetPatientById;
+using Patients.Features.ListPatients;
 using Patients.Features.RegisterPatient;
 using Patients.Persistence;
 
@@ -31,6 +32,7 @@ public sealed class PatientsModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
+        ListPatientsEndpoint.Map(app);
         RegisterPatientEndpoint.Map(app);
         GetPatientByIdEndpoint.Map(app);
         AddAllergyEndpoint.Map(app);

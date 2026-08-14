@@ -1,5 +1,6 @@
 using Billing.Features.CreateInvoice;
 using Billing.Features.GetInvoiceById;
+using Billing.Features.ListInvoices;
 using Billing.Features.IssueInvoice;
 using Billing.Features.RecordPayment;
 using Billing.Features.VoidInvoice;
@@ -31,6 +32,7 @@ public sealed class BillingModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
+        ListInvoicesEndpoint.Map(app);
         CreateInvoiceEndpoint.Map(app);
         IssueInvoiceEndpoint.Map(app);
         RecordPaymentEndpoint.Map(app);

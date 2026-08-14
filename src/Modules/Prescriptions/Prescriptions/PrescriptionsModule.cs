@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Prescriptions.Features.ActivatePrescription;
 using Prescriptions.Features.DispensePrescription;
 using Prescriptions.Features.GetPrescriptionById;
+using Prescriptions.Features.ListPrescriptions;
 using Prescriptions.Features.WritePrescription;
 using Prescriptions.Persistence;
 
@@ -30,6 +31,7 @@ public sealed class PrescriptionsModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
+        ListPrescriptionsEndpoint.Map(app);
         WritePrescriptionEndpoint.Map(app);
         ActivatePrescriptionEndpoint.Map(app);
         DispensePrescriptionEndpoint.Map(app);

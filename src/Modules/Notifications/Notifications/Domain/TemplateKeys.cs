@@ -4,4 +4,5 @@ public static class TemplateKeys
 {
     public const string AppointmentReminder = "AppointmentReminder";
     public const string PaymentConfirmation = "PaymentConfirmation";
+    public const string DailyDigest         = "DailyDigest";
 }

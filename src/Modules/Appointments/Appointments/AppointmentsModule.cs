@@ -2,6 +2,7 @@ using Appointments.Features.BookAppointment;
 using Appointments.Features.CancelAppointment;
 using Appointments.Features.CheckInAppointment;
 using Appointments.Features.GetAppointmentById;
+using Appointments.Features.ListAppointments;
 using Appointments.Persistence;
 using Core;
 using FluentValidation;
@@ -30,6 +31,7 @@ public sealed class AppointmentsModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
+        ListAppointmentsEndpoint.Map(app);
         BookAppointmentEndpoint.Map(app);
         CheckInAppointmentEndpoint.Map(app);
         CancelAppointmentEndpoint.Map(app);

@@ -18,4 +18,10 @@ public sealed class Diagnosis
     public string Icd10Code { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public DiagnosisType Type { get; private set; }
+
+    internal void Update(string description, DiagnosisType type)
+    {
+        Description = description;
+        Type = type;
+    }
 }

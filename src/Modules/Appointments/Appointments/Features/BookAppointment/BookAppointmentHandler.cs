@@ -34,15 +34,20 @@ public sealed class BookAppointmentHandler(
 
         // Double-booking guard: one appointment at a time for this clinic.
         // The global query filter means this only checks the current tenant's appointments.
+        // Note: EF Core / Npgsql cannot translate DateTimeOffset.AddMinutes(columnValue),
+        // so we filter candidates in SQL (start < our end), then check precise overlap in memory.
         var endTime = command.ScheduledAt.AddMinutes(command.DurationMinutes);
 
-        var hasOverlap = await db.Appointments
-            .AnyAsync(a =>
+        var candidates = await db.Appointments
+            .Where(a =>
                 a.Status != AppointmentStatus.Cancelled &&
-                a.ScheduledAt < endTime &&
-                a.ScheduledAt.AddMinutes(a.DurationMinutes) > command.ScheduledAt,
-                cancellationToken)
+                a.ScheduledAt < endTime)
+            .Select(a => new { a.ScheduledAt, a.DurationMinutes })
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        var hasOverlap = candidates.Any(a =>
+            a.ScheduledAt.AddMinutes(a.DurationMinutes) > command.ScheduledAt);
 
         if (hasOverlap)
             return Result<BookAppointmentResponse>.Fail(

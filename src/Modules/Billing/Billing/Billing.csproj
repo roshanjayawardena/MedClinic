@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
     <ProjectReference Include="..\Billing.Contracts\Billing.Contracts.csproj" />
     <ProjectReference Include="..\..\Encounters\Encounters.Contracts\Encounters.Contracts.csproj" />
+    <ProjectReference Include="..\..\Patients\Patients.Contracts\Patients.Contracts.csproj" />
     <ProjectReference Include="..\..\Prescriptions\Prescriptions.Contracts\Prescriptions.Contracts.csproj" />
   </ItemGroup>
 

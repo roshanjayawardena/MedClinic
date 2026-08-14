@@ -44,6 +44,7 @@ public sealed class GetPrescriptionByIdHandler(
             prescription.Id,
             prescription.EncounterId,
             prescription.PatientId,
+            prescription.DrugName,
             prescription.Status.ToString(),
             prescription.DosageInstructions,
             prescription.QuantityDays,

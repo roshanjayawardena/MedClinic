@@ -1,5 +1,7 @@
 using Core;
+using Hangfire;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +28,13 @@ public sealed class NotificationsModule : IModule
         // by changing this single registration — the handlers are not affected.
         services.AddScoped<INotificationSender, ConsoleNotificationSender>();
 
-        // AppointmentReminderJob is resolved from DI so it can use IDbContextFactory and IMediator.
-        // Hangfire storage is configured in Program.cs where Hangfire.PostgreSql is available.
+        // Hangfire jobs are resolved from DI.
+        // Storage is configured in Program.cs where Hangfire.PostgreSql is available.
         services.AddScoped<AppointmentReminderJob>();
+        services.AddScoped<DailyDigestJob>();
+
+        // Registers the daily digest as a recurring Hangfire job on startup.
+        services.AddSingleton<IHostedService, DigestJobRegistrar>();
     }
 
     // Notifications is a pure consumer: no HTTP endpoints to register.

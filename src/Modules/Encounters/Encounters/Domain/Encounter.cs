@@ -46,6 +46,32 @@ public sealed class Encounter : AuditableEntity
         return Result.Ok();
     }
 
+    public Result RemoveDiagnosis(string icd10Code)
+    {
+        if (Status != EncounterStatus.Open)
+            return Result.Fail(new Error("Encounter.Closed", "Cannot modify a closed encounter."));
+
+        var dx = _diagnoses.FirstOrDefault(d => d.Icd10Code == icd10Code);
+        if (dx is null)
+            return Result.Fail(new Error("Diagnosis.NotFound", $"Diagnosis '{icd10Code}' not found on this encounter."));
+
+        _diagnoses.Remove(dx);
+        return Result.Ok();
+    }
+
+    public Result UpdateDiagnosis(string icd10Code, string description, DiagnosisType diagnosisType)
+    {
+        if (Status != EncounterStatus.Open)
+            return Result.Fail(new Error("Encounter.Closed", "Cannot modify a closed encounter."));
+
+        var dx = _diagnoses.FirstOrDefault(d => d.Icd10Code == icd10Code);
+        if (dx is null)
+            return Result.Fail(new Error("Diagnosis.NotFound", $"Diagnosis '{icd10Code}' not found on this encounter."));
+
+        dx.Update(description, diagnosisType);
+        return Result.Ok();
+    }
+
     public Result Close(string? clinicalNotes, DateTimeOffset now)
     {
         if (Status != EncounterStatus.Open)

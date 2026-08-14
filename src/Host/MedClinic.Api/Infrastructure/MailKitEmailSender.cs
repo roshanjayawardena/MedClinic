@@ -32,7 +32,7 @@ public sealed class MailKitEmailSender(
         var mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress(fromName, from));
         mimeMessage.To.Add(MailboxAddress.Parse(message.Recipient));
-        mimeMessage.Subject = "MediClinic Notification";
+        mimeMessage.Subject = message.Subject;
         mimeMessage.Body    = new TextPart("html") { Text = message.Body };
 
         using var smtp  = new SmtpClient();

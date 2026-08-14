@@ -3,6 +3,7 @@ using Core;
 using Hangfire;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Notifications.Domain;
 using Notifications.Jobs;
 using Notifications.Persistence;
@@ -13,12 +14,32 @@ public sealed class OnAppointmentBookedHandler(
     IDbContextFactory<NotificationsDbContext> dbFactory,
     IBackgroundJobClient backgroundJobs,
     TimeProvider timeProvider,
-    ClinicMetrics metrics)
+    ClinicMetrics metrics,
+    ILogger<OnAppointmentBookedHandler> logger)
     : INotificationHandler<AppointmentBookedIntegrationEvent>
 {
     private static readonly TimeSpan ReminderLeadTime = TimeSpan.FromHours(24);
 
+    private static readonly Action<ILogger, string, Exception?> LogScheduleFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1, "ReminderScheduleFailed"),
+            "Failed to schedule appointment reminder: {ExceptionType}");
+
     public async ValueTask Handle(
+        AppointmentBookedIntegrationEvent notification,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await HandleInternalAsync(notification, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Notification scheduling must never crash the appointment booking transaction.
+            LogScheduleFailed(logger, ex.GetType().Name, null);
+        }
+    }
+
+    private async ValueTask HandleInternalAsync(
         AppointmentBookedIntegrationEvent notification,
         CancellationToken cancellationToken)
     {

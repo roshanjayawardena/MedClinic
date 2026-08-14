@@ -9,6 +9,7 @@ public sealed record GetPrescriptionByIdResponse(
     Guid PrescriptionId,
     Guid EncounterId,
     Guid PatientId,
+    string DrugName,
     string Status,
     string DosageInstructions,
     int QuantityDays,

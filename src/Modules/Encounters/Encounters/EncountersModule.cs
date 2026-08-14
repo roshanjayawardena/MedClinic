@@ -1,7 +1,11 @@
 using Core;
 using Encounters.Features.AddDiagnosis;
 using Encounters.Features.CloseEncounter;
+using Encounters.Features.RemoveDiagnosis;
+using Encounters.Features.UpdateDiagnosis;
 using Encounters.Features.GetEncounterById;
+using Encounters.Features.ListEncounters;
+using Encounters.Features.ListEncountersByPatient;
 using Encounters.Features.OpenEncounter;
 using Encounters.Features.RecordVitals;
 using Encounters.Persistence;
@@ -31,10 +35,14 @@ public sealed class EncountersModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
+        ListEncountersEndpoint.Map(app);
         OpenEncounterEndpoint.Map(app);
         AddDiagnosisEndpoint.Map(app);
+        UpdateDiagnosisEndpoint.Map(app);
+        RemoveDiagnosisEndpoint.Map(app);
         RecordVitalsEndpoint.Map(app);
         CloseEncounterEndpoint.Map(app);
         GetEncounterByIdEndpoint.Map(app);
+        ListEncountersByPatientEndpoint.Map(app);
     }
 }
