@@ -1,6 +1,7 @@
 using System.Reflection;
 using Appointments.Persistence;
 using Billing.Persistence;
+using Clinics.Persistence;
 using Core;
 using Notifications.Persistence;
 using Encounters.Persistence;
@@ -36,6 +37,14 @@ var tenantContext = new MigrationTenantContext();
 
 // Register each module's DbContext pointing at the centralized migrations assembly.
 // Add a new entry here whenever a new module is created (follow the add-module skill).
+// Clinics schema has no tenant filter — plain DbContext.
+host.Services.AddDbContext<ClinicsDbContext>(o =>
+    o.UseNpgsql(connStr, npg => npg
+        .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
+        .MigrationsHistoryTable("__EFMigrationsHistory", "clinics"))
+     .ConfigureWarnings(w => w.Ignore(
+         Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
 host.Services.AddDbContext<PatientsDbContext>(o =>
     o.UseNpgsql(connStr, npg => npg
         .MigrationsAssembly("MedClinic.Migrations.PostgreSQL")
@@ -99,6 +108,10 @@ await using var scope = app.Services.CreateAsyncScope();
 var sp = scope.ServiceProvider;
 
 Console.WriteLine("Applying MedClinic migrations...");
+
+// Clinics first — every other tenant-scoped module depends on a clinic existing.
+await sp.GetRequiredService<ClinicsDbContext>().Database.MigrateAsync();
+Console.WriteLine("  ✓ Clinics");
 
 // Apply each module's migrations in dependency order.
 // Patients first — other modules may reference patient ids.
