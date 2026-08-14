@@ -189,6 +189,7 @@ try
 
     // ── Middleware pipeline ───────────────────────────────────────────────────
     app.UseExceptionHandler();  // GlobalExceptionHandler → RFC 9457 ProblemDetails
+    app.UseMiddleware<SecurityHeadersMiddleware>();  // CSP, HSTS, X-Frame-Options, etc.
 
     app.UseSerilogRequestLogging(opts =>
     {
