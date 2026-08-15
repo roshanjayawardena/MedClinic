@@ -66,6 +66,11 @@ try
     builder.Services.AddMediator(o => o.ServiceLifetime = ServiceLifetime.Scoped);
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddSingleton<ITenantContext, FinbuckleTenantContext>();
+    // Singleton is correct here — CurrentUserContext reads from IHttpContextAccessor which is
+    // itself a singleton. The HttpContext it reads is set per-request on that singleton accessor,
+    // so there is no captured-scope issue. Singleton also allows EF Core design-time tooling
+    // to resolve it from the root provider when generating migrations.
+    builder.Services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<ClinicMetrics>();
 

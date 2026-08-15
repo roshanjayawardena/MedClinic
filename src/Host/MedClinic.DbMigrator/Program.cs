@@ -3,9 +3,9 @@ using Appointments.Persistence;
 using Billing.Persistence;
 using Clinics.Persistence;
 using Core;
+using MedClinic.Migrations.PostgreSQL;
 using Notifications.Persistence;
 using Encounters.Persistence;
-using MedClinic.Migrations.PostgreSQL;
 using MedClinic.Migrations.PostgreSQL.Migrations.Patients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +33,8 @@ var connStr = host.Configuration["ConnectionStrings:DefaultConnection"]
 if (!connStr.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase))
     connStr = connStr.TrimEnd(';') + ";SSL Mode=Disable;Trust Server Certificate=true";
 
-var tenantContext = new MigrationTenantContext();
+var tenantContext     = new MigrationTenantContext();
+var userContext       = new MigrationUserContext();
 
 // Register each module's DbContext pointing at the centralized migrations assembly.
 // Add a new entry here whenever a new module is created (follow the add-module skill).
@@ -100,6 +101,7 @@ host.Services.AddIdentityCore<ClinicUser>()
     .AddEntityFrameworkStores<IdentityModuleDbContext>();
 
 host.Services.AddSingleton<ITenantContext>(tenantContext);
+host.Services.AddSingleton<ICurrentUserContext>(userContext);
 host.Services.AddSingleton(TimeProvider.System);
 
 var app = host.Build();

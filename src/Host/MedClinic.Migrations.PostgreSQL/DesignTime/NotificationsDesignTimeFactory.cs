@@ -16,6 +16,6 @@ internal sealed class NotificationsDesignTimeFactory : IDesignTimeDbContextFacto
                     .MigrationsHistoryTable("__EFMigrationsHistory", "notifications"))
             .Options;
 
-        return new NotificationsDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new NotificationsDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

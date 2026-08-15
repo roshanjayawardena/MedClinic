@@ -16,6 +16,7 @@ namespace Persistence;
 public abstract class BaseDbContext<TContext>(
     DbContextOptions<TContext> options,
     ITenantContext tenantContext,
+    ICurrentUserContext currentUserContext,
     TimeProvider timeProvider)
     : DbContext(options)
     where TContext : DbContext
@@ -58,30 +59,35 @@ public abstract class BaseDbContext<TContext>(
 
     private void StampAuditFields()
     {
-        var now = timeProvider.GetUtcNow();
+        var now    = timeProvider.GetUtcNow();
+        var userId = currentUserContext.UserId; // Guid.Empty for background jobs / anonymous
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             switch (entry.State)
             {
                 case EntityState.Added:
-                    // TenantId comes from the current request context, not from user-supplied data.
-                    entry.Property(nameof(AuditableEntity.TenantId)).CurrentValue = tenantContext.TenantId;
-                    entry.Property(nameof(AuditableEntity.CreatedAt)).CurrentValue = now;
+                    // TenantId and CreatedById come from context — never from user-supplied data.
+                    entry.Property(nameof(AuditableEntity.TenantId)).CurrentValue   = tenantContext.TenantId;
+                    entry.Property(nameof(AuditableEntity.CreatedAt)).CurrentValue  = now;
+                    entry.Property(nameof(AuditableEntity.CreatedById)).CurrentValue = userId;
                     break;
 
                 case EntityState.Modified:
-                    entry.Property(nameof(AuditableEntity.ModifiedAt)).CurrentValue = now;
-                    // Never let a modification reset CreatedAt or TenantId.
-                    entry.Property(nameof(AuditableEntity.CreatedAt)).IsModified = false;
-                    entry.Property(nameof(AuditableEntity.TenantId)).IsModified = false;
+                    entry.Property(nameof(AuditableEntity.ModifiedAt)).CurrentValue   = now;
+                    entry.Property(nameof(AuditableEntity.ModifiedById)).CurrentValue = userId;
+                    // Never let a modification reset immutable insert-time fields.
+                    entry.Property(nameof(AuditableEntity.CreatedAt)).IsModified   = false;
+                    entry.Property(nameof(AuditableEntity.CreatedById)).IsModified  = false;
+                    entry.Property(nameof(AuditableEntity.TenantId)).IsModified    = false;
                     break;
 
                 case EntityState.Deleted:
                     // Intercept hard-delete: convert to soft-delete.
                     entry.State = EntityState.Modified;
-                    entry.Property(nameof(AuditableEntity.IsDeleted)).CurrentValue = true;
-                    entry.Property(nameof(AuditableEntity.DeletedAt)).CurrentValue = now;
+                    entry.Property(nameof(AuditableEntity.IsDeleted)).CurrentValue   = true;
+                    entry.Property(nameof(AuditableEntity.DeletedAt)).CurrentValue   = now;
+                    entry.Property(nameof(AuditableEntity.ModifiedById)).CurrentValue = userId;
                     break;
             }
         }

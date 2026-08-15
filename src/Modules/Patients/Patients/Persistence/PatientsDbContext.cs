@@ -13,8 +13,9 @@ public sealed class PatientsDbContext
     public PatientsDbContext(
         DbContextOptions<PatientsDbContext> options,
         ITenantContext tenantContext,
+        ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
-        : base(options, tenantContext, timeProvider)
+        : base(options, tenantContext, currentUserContext, timeProvider)
     {
         _tenantContext = tenantContext;
     }

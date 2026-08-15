@@ -8,8 +8,9 @@ namespace Notifications.Persistence;
 public sealed class NotificationsDbContext(
     DbContextOptions<NotificationsDbContext> options,
     ITenantContext tenantContext,
+    ICurrentUserContext currentUserContext,
     TimeProvider timeProvider)
-    : BaseDbContext<NotificationsDbContext>(options, tenantContext, timeProvider)
+    : BaseDbContext<NotificationsDbContext>(options, tenantContext, currentUserContext, timeProvider)
 {
     public DbSet<Notification> Notifications => Set<Notification>();
 

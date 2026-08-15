@@ -20,6 +20,6 @@ internal sealed class PatientsDesignTimeFactory : IDesignTimeDbContextFactory<Pa
                     .MigrationsHistoryTable("__EFMigrationsHistory", "patients"))
             .Options;
 
-        return new PatientsDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new PatientsDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

@@ -16,6 +16,6 @@ internal sealed class PrescriptionsDesignTimeFactory : IDesignTimeDbContextFacto
                     .MigrationsHistoryTable("__EFMigrationsHistory", "prescriptions"))
             .Options;
 
-        return new PrescriptionsDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new PrescriptionsDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

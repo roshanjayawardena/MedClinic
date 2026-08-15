@@ -8,8 +8,9 @@ namespace Appointments.Persistence;
 public sealed class AppointmentsDbContext(
     DbContextOptions<AppointmentsDbContext> options,
     ITenantContext tenantContext,
+    ICurrentUserContext currentUserContext,
     TimeProvider timeProvider)
-    : BaseDbContext<AppointmentsDbContext>(options, tenantContext, timeProvider)
+    : BaseDbContext<AppointmentsDbContext>(options, tenantContext, currentUserContext, timeProvider)
 {
     public DbSet<Appointment> Appointments => Set<Appointment>();
 

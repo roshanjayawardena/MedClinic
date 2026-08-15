@@ -16,6 +16,6 @@ internal sealed class BillingDesignTimeFactory : IDesignTimeDbContextFactory<Bil
                     .MigrationsHistoryTable("__EFMigrationsHistory", "billing"))
             .Options;
 
-        return new BillingDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new BillingDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

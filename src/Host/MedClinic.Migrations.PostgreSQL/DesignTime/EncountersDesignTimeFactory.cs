@@ -16,6 +16,6 @@ internal sealed class EncountersDesignTimeFactory : IDesignTimeDbContextFactory<
                     .MigrationsHistoryTable("__EFMigrationsHistory", "encounters"))
             .Options;
 
-        return new EncountersDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new EncountersDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

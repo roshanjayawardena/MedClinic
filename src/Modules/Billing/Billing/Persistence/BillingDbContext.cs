@@ -10,8 +10,9 @@ public sealed class BillingDbContext : BaseDbContext<BillingDbContext>
     public BillingDbContext(
         DbContextOptions<BillingDbContext> options,
         ITenantContext tenantContext,
+        ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
-        : base(options, tenantContext, timeProvider)
+        : base(options, tenantContext, currentUserContext, timeProvider)
     {
     }
 

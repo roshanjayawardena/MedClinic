@@ -13,8 +13,9 @@ public sealed class EncountersDbContext
     public EncountersDbContext(
         DbContextOptions<EncountersDbContext> options,
         ITenantContext tenantContext,
+        ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
-        : base(options, tenantContext, timeProvider)
+        : base(options, tenantContext, currentUserContext, timeProvider)
     {
         _tenantContext = tenantContext;
     }

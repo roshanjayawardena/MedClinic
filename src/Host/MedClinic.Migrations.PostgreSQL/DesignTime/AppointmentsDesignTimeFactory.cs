@@ -16,6 +16,6 @@ internal sealed class AppointmentsDesignTimeFactory : IDesignTimeDbContextFactor
                     .MigrationsHistoryTable("__EFMigrationsHistory", "appointments"))
             .Options;
 
-        return new AppointmentsDbContext(options, new MigrationTenantContext(), TimeProvider.System);
+        return new AppointmentsDbContext(options, new MigrationTenantContext(), new MigrationUserContext(), TimeProvider.System);
     }
 }

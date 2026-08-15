@@ -18,8 +18,14 @@ public abstract class AuditableEntity
     /// <summary>UTC timestamp of first insert. Set by BaseDbContext.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Id of the user who created this record. Set by BaseDbContext on insert.</summary>
+    public Guid CreatedById { get; private set; }
+
     /// <summary>UTC timestamp of last update. Null until first modification.</summary>
     public DateTimeOffset? ModifiedAt { get; private set; }
+
+    /// <summary>Id of the user who last modified this record. Null until first modification.</summary>
+    public Guid? ModifiedById { get; private set; }
 
     /// <summary>True if the record has been soft-deleted. Never hard-delete clinical data.</summary>
     public bool IsDeleted { get; private set; }

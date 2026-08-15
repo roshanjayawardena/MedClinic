@@ -13,8 +13,9 @@ public sealed class PrescriptionsDbContext
     public PrescriptionsDbContext(
         DbContextOptions<PrescriptionsDbContext> options,
         ITenantContext tenantContext,
+        ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
-        : base(options, tenantContext, timeProvider)
+        : base(options, tenantContext, currentUserContext, timeProvider)
     {
         _tenantContext = tenantContext;
     }
